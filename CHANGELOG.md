@@ -2,6 +2,10 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [0.4.1] - 2026-01-28
+
+- Fix handling of missing SNMP values so protocol detection can fall back cleanly
+
 ## [0.4.0] - 2026-01-28
 
 ### Added

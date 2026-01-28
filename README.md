@@ -70,6 +70,8 @@ Enable debug logging:
 logger:
   logs:
     custom_components.ups_snmp_ha: debug
+    custom_components.ups_snmp_ha.coordinator: debug
+    custom_components.ups_snmp_ha.snmp_helper: debug
 ```
 
 Check for SNMP connectivity and community string correctness. If a device does not expose UPS-MIB, the integration will automatically fall back to APC enterprise OIDs when available.
