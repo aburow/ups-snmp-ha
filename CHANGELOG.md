@@ -2,6 +2,10 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [0.4.2] - 2026-01-28
+
+- Reorder sensors so fast-poll values appear first, then slow-poll values alphabetically
+
 ## [0.4.1] - 2026-01-28
 
 - Fix handling of missing SNMP values so protocol detection can fall back cleanly
