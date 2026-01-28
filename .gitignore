@@ -1,0 +1,6 @@
+# Local-only and internal docs
+docs/
+localonly/
+__pycache__/
+*.pyc
+.DS_Store

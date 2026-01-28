@@ -1,0 +1,15 @@
+{
+  "domain": "ups_snmp_ha",
+  "name": "UPS SNMP",
+  "codeowners": ["@aburow"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/aburow/ups-snmp-ha",
+  "issue_tracker": "https://github.com/aburow/ups-snmp-ha/issues",
+  "iot_class": "local_polling",
+  "quality_scale": "internal",
+  "requirements": [
+    "pysnmp>=4.4.12"
+  ],
+  "version": "0.4.0"
+}
