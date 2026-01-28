@@ -2,6 +2,10 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [0.4.3] - 2026-01-28
+
+- Poll seconds on battery on the fast interval
+
 ## [0.4.2] - 2026-01-28
 
 - Reorder sensors so fast-poll values appear first, then slow-poll values alphabetically

@@ -75,3 +75,51 @@ logger:
 ```
 
 Check for SNMP connectivity and community string correctness. If a device does not expose UPS-MIB, the integration will automatically fall back to APC enterprise OIDs when available.
+
+## Architecture
+
+- Here’s a concise block diagram of the integration and responsibilities:
+
+```
++------------------------------+
+| Home Assistant               |
+| (core runtime + scheduler)   |
++--------------+---------------+
+               |
+               v
++------------------------------+       periodic updates
+| UpsSnmpCoordinator           |<---------------------------+
+| - schedules fast/slow polls  |                            |
+| - detects MIB + SNMP version |                            |
+| - merges/derives states      |                            |
+| - raises UpdateFailed on     |                            |
+|   no data                    |                            |
++--------------+---------------+                            |
+               |                                            |
+               v                                            |
++------------------------------+    async SNMP GETs         |
+| snmp_helper                  |----------------------------+
+| - sends SNMP queries         |
+| - handles timeouts/errors    |
+| - filters missing/empty OIDs |
++--------------+---------------+
+               |
+               v
++------------------------------+
+| UPS device (SNMP agent)      |
+| - exposes UPS-MIB/APC OIDs   |
++------------------------------+
+
++------------------------------+
+| Sensor/Binary Sensor modules |
+| - map coordinator data to    |
+|   HA entities and attributes |
++------------------------------+
+```
+
+Component responsibilities (short list):
+
+- UpsSnmpCoordinator: polling cadence, MIB detection, data normalization, derived states, error handling.
+- snmp_helper: SNMP transport, per-OID GETs, missing/empty value handling.
+- sensor.py / binary_sensor.py: entity definitions and presentation in HA.
+- UPS SNMP agent: provides OID values via UPS-MIB/APC enterprise OIDs.

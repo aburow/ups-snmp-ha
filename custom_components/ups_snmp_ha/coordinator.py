@@ -125,7 +125,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self._detect_protocol()
 
         protocol_oids = UPS_MIB_OIDS if self.protocol == UPS_MIB else APC_MIB_OIDS
-        fast_keys = {"output_source_raw", "runtime_remaining"}
+        fast_keys = {"output_source_raw", "runtime_remaining", "seconds_on_battery"}
         fast_data = await self._fetch_keys(protocol_oids, fast_keys)
 
         slow_data: dict[str, Any] = {}
