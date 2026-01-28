@@ -18,6 +18,8 @@ from pysnmp.hlapi.v3arch.asyncio import (
     UdpTransportTarget,
     get_cmd,
 )
+from pysnmp.proto.rfc1902 import Null
+from pysnmp.proto.rfc1905 import EndOfMibView, NoSuchInstance, NoSuchObject
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +27,23 @@ _LOGGER = logging.getLogger(__name__)
 def _snmp_version_to_model(version: str) -> int:
     """Map SNMP version string to pysnmp mpModel."""
     return 0 if version == "1" else 1
+
+
+def _is_missing_value(value: object) -> bool:
+    """Return True if pysnmp returned a missing/invalid value."""
+    if isinstance(value, Null):
+        return True
+    if not hasattr(value, "isSameTypeWith"):
+        return False
+    if value.isSameTypeWith(Null()):
+        return True
+    if value.isSameTypeWith(NoSuchInstance()):
+        return True
+    if value.isSameTypeWith(NoSuchObject()):
+        return True
+    if value.isSameTypeWith(EndOfMibView()):
+        return True
+    return False
 
 
 async def async_get_snmp_value(
@@ -62,7 +81,14 @@ async def async_get_snmp_value(
             return None
 
         for var_bind in var_binds:
-            value = str(var_bind[1])
+            value_obj = var_bind[1]
+            if _is_missing_value(value_obj):
+                _LOGGER.debug("SNMP query returned missing value for OID %s", oid)
+                return None
+            value = str(value_obj).strip()
+            if not value:
+                _LOGGER.debug("SNMP query returned empty value for OID %s", oid)
+                return None
             _LOGGER.debug("SNMP query succeeded: %s=%s", oid, value[:50] if len(value) > 50 else value)
             return value
 
