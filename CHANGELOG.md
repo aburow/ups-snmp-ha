@@ -2,6 +2,10 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [0.4.5] - 2026-01-29
+
+- Show human-readable battery status for UPS-MIB and APC devices
+
 ## [0.4.4] - 2026-01-29
 
 - Poll battery charge and input voltage on the fast interval for UPS-MIB and APC devices

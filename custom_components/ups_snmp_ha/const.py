@@ -76,7 +76,7 @@ SNMP_SENSOR_DESCRIPTIONS = [
     UpsSnmpSensorDescription(
         key="battery_status",
         name="Battery Status",
-        data_key="battery_status",
+        data_key="battery_status_text",
         state_class=None,
     ),
     UpsSnmpSensorDescription(

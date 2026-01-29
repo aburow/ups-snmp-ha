@@ -82,6 +82,13 @@ APC_OUTPUT_SOURCE_MAP = {
     4: "bypass",
 }
 
+BATTERY_STATUS_MAP = {
+    1: "unknown",
+    2: "normal",
+    3: "low",
+    4: "depleted",
+}
+
 
 class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that polls UPS data via SNMP."""
@@ -217,8 +224,19 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _derive_states(self, data: dict[str, Any]) -> dict[str, Any]:
         """Derive human-readable and binary states."""
         output_source_raw = data.get("output_source_raw")
+        derived: dict[str, Any] = {}
+
+        battery_status = data.get("battery_status")
+        if battery_status is not None:
+            try:
+                derived["battery_status_text"] = BATTERY_STATUS_MAP.get(
+                    int(battery_status), "unknown"
+                )
+            except (TypeError, ValueError):
+                derived["battery_status_text"] = "unknown"
+
         if output_source_raw is None:
-            return {}
+            return derived
 
         if self.protocol == APC_MIB:
             source_map = APC_OUTPUT_SOURCE_MAP
@@ -233,12 +251,14 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         on_battery = int(output_source_raw) in battery_values
         ac_power = int(output_source_raw) in normal_values
 
-        return {
+        derived.update({
             "output_source": output_source_text,
             "on_battery": on_battery,
             "ac_power": ac_power,
             "on_bypass": output_source_text == "bypass",
-        }
+        })
+
+        return derived
 
     def _update_metadata(self, data: dict[str, Any]) -> None:
         """Update device metadata from SNMP data."""
