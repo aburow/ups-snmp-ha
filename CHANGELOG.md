@@ -2,6 +2,10 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [0.4.6] - 2026-01-29
+
+- Remove pysnmp requirement to use Home Assistant’s bundled version
+
 ## [0.4.5] - 2026-01-29
 
 - Show human-readable battery status for UPS-MIB and APC devices
