@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 from pysnmp.hlapi.v3arch.asyncio import (
     CommunityData,
@@ -22,6 +23,9 @@ from pysnmp.proto.rfc1902 import Null
 from pysnmp.proto.rfc1905 import EndOfMibView, NoSuchInstance, NoSuchObject
 
 _LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
 
 def _snmp_version_to_model(version: str) -> int:
@@ -46,7 +50,7 @@ def _is_missing_value(value: object) -> bool:
     return False
 
 
-async def async_get_snmp_value(
+async def _async_get_snmp_value(
     host: str,
     oid: str,
     community: str = "public",
@@ -103,7 +107,7 @@ async def async_get_snmp_value(
         return None
 
 
-async def async_get_snmp_values(
+async def _async_get_snmp_values(
     host: str,
     oids: list[str],
     community: str = "public",
@@ -115,10 +119,7 @@ async def async_get_snmp_values(
         return {}
 
     results = await asyncio.gather(
-        *[
-            async_get_snmp_value(host, oid, community, timeout, version)
-            for oid in oids
-        ],
+        *[_async_get_snmp_value(host, oid, community, timeout, version) for oid in oids],
         return_exceptions=True,
     )
 
@@ -130,3 +131,37 @@ async def async_get_snmp_values(
             values[oid] = result
 
     return values
+
+
+def _get_snmp_values_sync(
+    host: str,
+    oids: list[str],
+    community: str,
+    timeout: int,
+    version: str,
+) -> dict[str, str | None]:
+    """Run SNMP queries in a dedicated thread to avoid blocking the HA event loop."""
+    return asyncio.run(_async_get_snmp_values(host, oids, community, timeout, version))
+
+
+async def async_get_snmp_values(
+    host: str,
+    oids: list[str],
+    community: str = "public",
+    timeout: int = 5,
+    version: str = "2c",
+    hass: HomeAssistant | None = None,
+    use_executor: bool = True,
+) -> dict[str, str | None]:
+    """Query multiple SNMP OIDs, optionally offloading to an executor."""
+    if not oids:
+        return {}
+
+    if use_executor:
+        if hass is None:
+            raise RuntimeError("Home Assistant instance required for executor SNMP calls")
+        return await hass.async_add_executor_job(
+            _get_snmp_values_sync, host, oids, community, timeout, version
+        )
+
+    return await _async_get_snmp_values(host, oids, community, timeout, version)

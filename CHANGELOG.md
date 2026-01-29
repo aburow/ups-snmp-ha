@@ -2,6 +2,12 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [0.4.7] - 2026-01-29
+
+- Offload pysnmp queries to executor threads to avoid blocking the HA event loop
+- Serialize SNMP polling per host and add exponential backoff for repeated failures
+- Add clearer debug logging for polling, lock waits, and backoff
+
 ## [0.4.6] - 2026-01-29
 
 - Remove pysnmp requirement to use Home Assistant’s bundled version

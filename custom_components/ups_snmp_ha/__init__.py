@@ -49,6 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         device_name=device_name,
         fast_poll_interval=fast_poll,
         slow_poll_interval=slow_poll,
+        entry_id=entry.entry_id,
     )
 
     try:

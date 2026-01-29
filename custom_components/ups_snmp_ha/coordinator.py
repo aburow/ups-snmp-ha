@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 import time
@@ -101,6 +102,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         device_name: str,
         fast_poll_interval: int,
         slow_poll_interval: int,
+        entry_id: str,
     ) -> None:
         fast_interval = max(1, int(fast_poll_interval))
         super().__init__(
@@ -123,11 +125,56 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.hw_model: str | None = None
         self.serial_number: str | None = None
         self.fw_version: str | None = None
+        self._entry_id = entry_id
+
+        locks = hass.data[DOMAIN].setdefault("snmp_locks", {})
+        self._io_lock = locks.setdefault(self.host, asyncio.Lock())
+
+        self._failure_count = 0
+        self._backoff_until = 0.0
+        self._backoff_base = 2
+        self._backoff_max = 60
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from UPS via SNMP."""
         now = time.monotonic()
 
+        if self._backoff_until and now < self._backoff_until:
+            raise UpdateFailed(
+                f"{self.device_name} {self.host}: backoff active for {self._backoff_until - now:.1f}s"
+            )
+
+        _LOGGER.debug(
+            "Starting SNMP update for %s (%s, entry_id=%s)",
+            self.device_name,
+            self.host,
+            self._entry_id,
+        )
+
+        lock_started = time.monotonic()
+        try:
+            async with self._io_lock:
+                waited = time.monotonic() - lock_started
+                if waited > 0.001:
+                    _LOGGER.debug(
+                        "Waited %.3fs for SNMP lock (%s, entry_id=%s)",
+                        waited,
+                        self.host,
+                        self._entry_id,
+                    )
+                data = await self._async_update_data_locked(now)
+        except Exception as err:
+            self._handle_update_failure(err)
+            if isinstance(err, UpdateFailed):
+                raise
+            raise UpdateFailed(str(err)) from err
+
+        self._failure_count = 0
+        self._backoff_until = 0.0
+        return data
+
+    async def _async_update_data_locked(self, now: float) -> dict[str, Any]:
+        """Fetch data from UPS via SNMP with the I/O lock held."""
         if self.protocol is None:
             await self._detect_protocol()
 
@@ -158,6 +205,20 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return data
 
+    def _handle_update_failure(self, err: Exception) -> None:
+        """Apply backoff for repeated failures."""
+        self._failure_count += 1
+        backoff = min(self._backoff_max, self._backoff_base**self._failure_count)
+        self._backoff_until = time.monotonic() + backoff
+        _LOGGER.warning(
+            "SNMP update failed for %s (%s, entry_id=%s): %s; backing off for %.1fs",
+            self.device_name,
+            self.host,
+            self._entry_id,
+            err,
+            backoff,
+        )
+
     async def _detect_protocol(self) -> None:
         """Detect which SNMP MIB is available and the SNMP version."""
         for version in ("2c", "1"):
@@ -186,6 +247,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             community=self.community,
             timeout=5,
             version=version,
+            hass=self.hass,
         )
         return values.get(test_oid) is not None
 
@@ -201,6 +263,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             community=self.community,
             timeout=5,
             version=self.snmp_version,
+            hass=self.hass,
         )
 
         data: dict[str, Any] = {}

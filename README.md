@@ -6,6 +6,8 @@
 
 Home Assistant integration for monitoring UPS devices via SNMP with a focus on RFC1628 (UPS-MIB) and a fallback to APC enterprise OIDs when RFC1628 is unavailable.
 
+Current release: 0.4.7
+
 This custom component runs standalone and does not require NUT or APCUPSD.
 
 ## Features
@@ -16,6 +18,8 @@ This custom component runs standalone and does not require NUT or APCUPSD.
   - Fast (default 10s): AC power state + remaining runtime
   - Slow (default 5 min): inventory + other sensors
 - **Local communication** (no cloud dependency)
+- **Event-loop safe SNMP** (pysnmp work offloaded to executor)
+- **No new dependencies** beyond Home Assistant’s bundled pysnmp
 
 ## Installation
 
@@ -74,6 +78,12 @@ logger:
     custom_components.ups_snmp_ha.snmp_helper: debug
 ```
 
+Useful debug signals to look for:
+
+- `Starting SNMP update` with device name, host, entry_id
+- `Waited Xs for SNMP lock` when overlapping polls are serialized
+- `SNMP update failed ... backing off` for exponential backoff on failures
+
 Check for SNMP connectivity and community string correctness. If a device does not expose UPS-MIB, the integration will automatically fall back to APC enterprise OIDs when available.
 
 ## Architecture
@@ -100,6 +110,7 @@ Check for SNMP connectivity and community string correctness. If a device does n
 +------------------------------+    async SNMP GETs         |
 | snmp_helper                  |----------------------------+
 | - sends SNMP queries         |
+| - runs in executor threads   |
 | - handles timeouts/errors    |
 | - filters missing/empty OIDs |
 +--------------+---------------+
@@ -120,6 +131,6 @@ Check for SNMP connectivity and community string correctness. If a device does n
 Component responsibilities (short list):
 
 - UpsSnmpCoordinator: polling cadence, MIB detection, data normalization, derived states, error handling.
-- snmp_helper: SNMP transport, per-OID GETs, missing/empty value handling.
+- snmp_helper: SNMP transport, per-OID GETs, missing/empty value handling, executor offload.
 - sensor.py / binary_sensor.py: entity definitions and presentation in HA.
 - UPS SNMP agent: provides OID values via UPS-MIB/APC enterprise OIDs.
