@@ -11,5 +11,5 @@
   "requirements": [
     "pysnmp>=4.4.12"
   ],
-  "version": "0.4.3"
+  "version": "0.4.4"
 }
