@@ -107,7 +107,7 @@ Check for SNMP connectivity and community string correctness. If a device does n
 +--------------+---------------+                            |
                |                                            |
                v                                            |
-+------------------------------+    async SNMP GETs         |
++------------------------------+    SNMP GETs (executor)    |
 | snmp_helper                  |----------------------------+
 | - sends SNMP queries         |
 | - runs in executor threads   |
