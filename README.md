@@ -1,8 +1,8 @@
 # ups-snmp-ha
 
 ![HACS](https://img.shields.io/badge/HACS-Default-orange.svg)
-![HACS Validation](https://github.com/aburow/ups-snmp-ha/actions/workflows/hacs.yml/badge.svg)
-![Hassfest](https://github.com/aburow/ups-snmp-ha/actions/workflows/hassfest.yml/badge.svg)
+![HACS Validation](https://github.com/aburow/ups-snmp-ha/actions/workflows/hacs.yaml/badge.svg)
+![Hassfest](https://github.com/aburow/ups-snmp-ha/actions/workflows/hassfest.yaml/badge.svg)
 
 Home Assistant integration for monitoring UPS devices via SNMP with a focus on RFC1628 (UPS-MIB) and a fallback to APC enterprise OIDs when RFC1628 is unavailable.
 
