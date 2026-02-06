@@ -92,11 +92,11 @@ Check for SNMP connectivity and community string correctness. If a device does n
 
 ```mermaid
 flowchart TB
-  HA["Home Assistant\n(core runtime + scheduler)"]
-  COORD["UpsSnmpCoordinator\n- schedules fast/slow polls\n- detects MIB + SNMP version\n- merges/derives states\n- raises UpdateFailed on\n  no data"]
-  SNMP["snmp_helper\n- sends SNMP queries\n- runs in executor threads\n- handles timeouts/errors\n- filters missing/empty OIDs"]
-  UPS["UPS device (SNMP agent)\n- exposes UPS-MIB/APC OIDs"]
-  ENT["Sensor/Binary Sensor modules\n- map coordinator data to\n  HA entities and attributes"]
+  HA["Home Assistant<br/>(core runtime + scheduler)"]
+  COORD["UpsSnmpCoordinator<br/>- schedules fast/slow polls<br/>- detects MIB + SNMP version<br/>- merges/derives states<br/>- raises UpdateFailed on<br/>  no data"]
+  SNMP["snmp_helper<br/>- sends SNMP queries<br/>- runs in executor threads<br/>- handles timeouts/errors<br/>- filters missing/empty OIDs"]
+  UPS["UPS device (SNMP agent)<br/>- exposes UPS-MIB/APC OIDs"]
+  ENT["Sensor/Binary Sensor modules<br/>- map coordinator data to<br/>  HA entities and attributes"]
 
   HA --> COORD
   COORD -- "periodic updates" --> SNMP
