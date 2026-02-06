@@ -90,42 +90,18 @@ Check for SNMP connectivity and community string correctness. If a device does n
 
 - Here’s a concise block diagram of the integration and responsibilities:
 
-```
-+------------------------------+
-| Home Assistant               |
-| (core runtime + scheduler)   |
-+--------------+---------------+
-               |
-               v
-+------------------------------+       periodic updates
-| UpsSnmpCoordinator           |<---------------------------+
-| - schedules fast/slow polls  |                            |
-| - detects MIB + SNMP version |                            |
-| - merges/derives states      |                            |
-| - raises UpdateFailed on     |                            |
-|   no data                    |                            |
-+--------------+---------------+                            |
-               |                                            |
-               v                                            |
-+------------------------------+    SNMP GETs (executor)    |
-| snmp_helper                  |----------------------------+
-| - sends SNMP queries         |
-| - runs in executor threads   |
-| - handles timeouts/errors    |
-| - filters missing/empty OIDs |
-+--------------+---------------+
-               |
-               v
-+------------------------------+
-| UPS device (SNMP agent)      |
-| - exposes UPS-MIB/APC OIDs   |
-+------------------------------+
+```mermaid
+flowchart TB
+  HA["Home Assistant\n(core runtime + scheduler)"]
+  COORD["UpsSnmpCoordinator\n- schedules fast/slow polls\n- detects MIB + SNMP version\n- merges/derives states\n- raises UpdateFailed on\n  no data"]
+  SNMP["snmp_helper\n- sends SNMP queries\n- runs in executor threads\n- handles timeouts/errors\n- filters missing/empty OIDs"]
+  UPS["UPS device (SNMP agent)\n- exposes UPS-MIB/APC OIDs"]
+  ENT["Sensor/Binary Sensor modules\n- map coordinator data to\n  HA entities and attributes"]
 
-+------------------------------+
-| Sensor/Binary Sensor modules |
-| - map coordinator data to    |
-|   HA entities and attributes |
-+------------------------------+
+  HA --> COORD
+  COORD -- "periodic updates" --> SNMP
+  SNMP -- "SNMP GETs (executor)" --> UPS
+  COORD --> ENT
 ```
 
 Component responsibilities (short list):
