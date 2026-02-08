@@ -2,6 +2,10 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.0.0] - 2026-02-08
+
+- Mark the integration as stable 1.0.0 with no functional changes since 0.4.7
+
 ## [0.4.7] - 2026-01-29
 
 - Offload pysnmp queries to executor threads to avoid blocking the HA event loop
