@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pysnmp.hlapi.v3arch.asyncio import (
@@ -28,19 +29,23 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 
+@dataclass(frozen=True)
+class SnmpValue:
+    """Single OID query result."""
+
+    value: str | None
+    missing_oid: bool = False
+
+
 def _snmp_version_to_model(version: str) -> int:
     """Map SNMP version string to pysnmp mpModel."""
     return 0 if version == "1" else 1
 
 
-def _is_missing_value(value: object) -> bool:
-    """Return True if pysnmp returned a missing/invalid value."""
-    if isinstance(value, Null):
-        return True
+def _is_missing_oid_value(value: object) -> bool:
+    """Return True when pysnmp indicates the requested OID does not exist."""
     if not hasattr(value, "isSameTypeWith"):
         return False
-    if value.isSameTypeWith(Null()):
-        return True
     if value.isSameTypeWith(NoSuchInstance()):
         return True
     if value.isSameTypeWith(NoSuchObject()):
@@ -56,7 +61,7 @@ async def _async_get_snmp_value(
     community: str = "public",
     timeout: int = 5,
     version: str = "2c",
-) -> str | None:
+) -> SnmpValue:
     """Query single SNMP OID and return string value."""
     try:
         _LOGGER.debug("SNMP query to %s OID %s (timeout=%ds)", host, oid, timeout)
@@ -86,25 +91,28 @@ async def _async_get_snmp_value(
 
         for var_bind in var_binds:
             value_obj = var_bind[1]
-            if _is_missing_value(value_obj):
-                _LOGGER.debug("SNMP query returned missing value for OID %s", oid)
-                return None
+            if _is_missing_oid_value(value_obj):
+                _LOGGER.debug("SNMP query reports missing OID %s", oid)
+                return SnmpValue(value=None, missing_oid=True)
+            if isinstance(value_obj, Null) or getattr(value_obj, "isSameTypeWith", None) and value_obj.isSameTypeWith(Null()):
+                _LOGGER.debug("SNMP query returned null value for OID %s", oid)
+                return SnmpValue(value=None, missing_oid=False)
             value = str(value_obj).strip()
             if not value:
                 _LOGGER.debug("SNMP query returned empty value for OID %s", oid)
-                return None
+                return SnmpValue(value=None, missing_oid=False)
             _LOGGER.debug("SNMP query succeeded: %s=%s", oid, value[:50] if len(value) > 50 else value)
-            return value
+            return SnmpValue(value=value, missing_oid=False)
 
         _LOGGER.debug("SNMP query returned no value for OID %s", oid)
-        return None
+        return SnmpValue(value=None, missing_oid=False)
 
     except asyncio.TimeoutError:
         _LOGGER.warning("SNMP query to %s timed out after %ds for OID %s", host, timeout, oid)
-        return None
+        return SnmpValue(value=None, missing_oid=False)
     except Exception as err:
         _LOGGER.debug("SNMP query failed for %s (OID %s): %s (%s)", host, oid, err, type(err).__name__)
-        return None
+        return SnmpValue(value=None, missing_oid=False)
 
 
 async def _async_get_snmp_values(
@@ -113,7 +121,7 @@ async def _async_get_snmp_values(
     community: str = "public",
     timeout: int = 5,
     version: str = "2c",
-) -> dict[str, str | None]:
+) -> dict[str, SnmpValue]:
     """Query multiple SNMP OIDs using individual GETs to match HA loop expectations."""
     if not oids:
         return {}
@@ -123,10 +131,10 @@ async def _async_get_snmp_values(
         return_exceptions=True,
     )
 
-    values: dict[str, str | None] = {}
+    values: dict[str, SnmpValue] = {}
     for oid, result in zip(oids, results, strict=True):
         if isinstance(result, Exception):
-            values[oid] = None
+            values[oid] = SnmpValue(value=None, missing_oid=False)
         else:
             values[oid] = result
 
@@ -139,7 +147,7 @@ def _get_snmp_values_sync(
     community: str,
     timeout: int,
     version: str,
-) -> dict[str, str | None]:
+) -> dict[str, SnmpValue]:
     """Run SNMP queries in a dedicated thread to avoid blocking the HA event loop."""
     return asyncio.run(_async_get_snmp_values(host, oids, community, timeout, version))
 
@@ -152,7 +160,7 @@ async def async_get_snmp_values(
     version: str = "2c",
     hass: HomeAssistant | None = None,
     use_executor: bool = True,
-) -> dict[str, str | None]:
+) -> dict[str, SnmpValue]:
     """Query multiple SNMP OIDs, optionally offloading to an executor."""
     if not oids:
         return {}

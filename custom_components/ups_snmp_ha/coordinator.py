@@ -135,6 +135,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._backoff_until = 0.0
         self._backoff_base = 2
         self._backoff_max = 60
+        self._unsupported_oids: set[str] = set()
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from UPS via SNMP."""
@@ -251,11 +252,16 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             version=version,
             hass=self.hass,
         )
-        return values.get(test_oid) is not None
+        result = values.get(test_oid)
+        return result is not None and result.value is not None and not result.missing_oid
 
     async def _fetch_keys(self, oid_map: dict[str, dict[str, Any]], keys: set[str]) -> dict[str, Any]:
         """Fetch and normalize SNMP values for a set of keys."""
-        oids = [oid_map[key]["oid"] for key in keys if key in oid_map]
+        oids = [
+            oid_map[key]["oid"]
+            for key in keys
+            if key in oid_map and oid_map[key]["oid"] not in self._unsupported_oids
+        ]
         if not oids:
             return {}
 
@@ -274,7 +280,20 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if not spec:
                 continue
             oid = spec["oid"]
-            value = self._coerce_snmp_value(raw.get(oid))
+            if oid in self._unsupported_oids:
+                continue
+            result = raw.get(oid)
+            if result is None:
+                continue
+            if result.missing_oid:
+                self._unsupported_oids.add(oid)
+                _LOGGER.debug(
+                    "OID %s is not present on %s; skipping in future polls",
+                    oid,
+                    self.host,
+                )
+                continue
+            value = self._coerce_snmp_value(result.value)
             if value is None:
                 continue
             if spec.get("timeticks_minutes"):
