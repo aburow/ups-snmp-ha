@@ -183,6 +183,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         fast_keys = {
             "output_source_raw",
             "runtime_remaining",
+            "output_load",
             "seconds_on_battery",
             "battery_charge",
             "input_voltage",
