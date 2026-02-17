@@ -140,6 +140,13 @@ SNMP_SENSOR_DESCRIPTIONS = [
         data_key="output_line_count",
     ),
     UpsSnmpSensorDescription(
+        key="output_load",
+        name="Output Load",
+        native_unit_of_measurement="%",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="output_load",
+    ),
+    UpsSnmpSensorDescription(
         key="seconds_on_battery",
         name="Seconds On Battery",
         native_unit_of_measurement="s",

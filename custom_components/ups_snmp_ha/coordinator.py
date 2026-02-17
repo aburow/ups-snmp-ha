@@ -44,6 +44,7 @@ UPS_MIB_OIDS: dict[str, dict[str, Any]] = {
     "output_source_raw": {"oid": "1.3.6.1.2.1.33.1.4.1.0"},
     "output_frequency": {"oid": "1.3.6.1.2.1.33.1.4.2.0", "scale": 0.1},
     "output_line_count": {"oid": "1.3.6.1.2.1.33.1.4.3.0"},
+    "output_load": {"oid": "1.3.6.1.2.1.33.1.4.4.1.5.1"},
     "bypass_frequency": {"oid": "1.3.6.1.2.1.33.1.5.1.0", "scale": 0.1},
     "bypass_line_count": {"oid": "1.3.6.1.2.1.33.1.5.2.0"},
     "alarms_present": {"oid": "1.3.6.1.2.1.33.1.6.1.0"},
