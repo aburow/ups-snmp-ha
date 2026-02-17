@@ -44,7 +44,7 @@ UPS_MIB_OIDS: dict[str, dict[str, Any]] = {
     "output_source_raw": {"oid": "1.3.6.1.2.1.33.1.4.1.0"},
     "output_frequency": {"oid": "1.3.6.1.2.1.33.1.4.2.0", "scale": 0.1},
     "output_line_count": {"oid": "1.3.6.1.2.1.33.1.4.3.0"},
-    "output_load": {"oid": "1.3.6.1.2.1.33.1.4.4.1.5.1"},
+    "output_load": {"oids": ["1.3.6.1.2.1.33.1.4.4.1.5.1", "1.3.6.1.2.1.33.1.4.4.1.5.0"]},
     "bypass_frequency": {"oid": "1.3.6.1.2.1.33.1.5.1.0", "scale": 0.1},
     "bypass_line_count": {"oid": "1.3.6.1.2.1.33.1.5.2.0"},
     "alarms_present": {"oid": "1.3.6.1.2.1.33.1.6.1.0"},
@@ -257,11 +257,16 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _fetch_keys(self, oid_map: dict[str, dict[str, Any]], keys: set[str]) -> dict[str, Any]:
         """Fetch and normalize SNMP values for a set of keys."""
-        oids = [
-            oid_map[key]["oid"]
-            for key in keys
-            if key in oid_map and oid_map[key]["oid"] not in self._unsupported_oids
-        ]
+        oids: list[str] = []
+        for key in keys:
+            spec = oid_map.get(key)
+            if not spec:
+                continue
+            for oid in self._spec_oids(spec):
+                if oid in self._unsupported_oids:
+                    continue
+                if oid not in oids:
+                    oids.append(oid)
         if not oids:
             return {}
 
@@ -279,21 +284,23 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             spec = oid_map.get(key)
             if not spec:
                 continue
-            oid = spec["oid"]
-            if oid in self._unsupported_oids:
-                continue
-            result = raw.get(oid)
-            if result is None:
-                continue
-            if result.missing_oid:
-                self._unsupported_oids.add(oid)
-                _LOGGER.debug(
-                    "OID %s is not present on %s; skipping in future polls",
-                    oid,
-                    self.host,
-                )
-                continue
-            value = self._coerce_snmp_value(result.value)
+            value: Any | None = None
+            for oid in self._spec_oids(spec):
+                if oid in self._unsupported_oids:
+                    continue
+                result = raw.get(oid)
+                if result is None:
+                    continue
+                if result.missing_oid:
+                    self._unsupported_oids.add(oid)
+                    _LOGGER.debug(
+                        "OID %s is not present on %s; skipping in future polls",
+                        oid,
+                        self.host,
+                    )
+                    continue
+                value = self._coerce_snmp_value(result.value)
+                break
             if value is None:
                 continue
             if spec.get("timeticks_minutes"):
@@ -304,6 +311,13 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data[key] = value
 
         return data
+
+    @staticmethod
+    def _spec_oids(spec: dict[str, Any]) -> list[str]:
+        """Return one or more OIDs for a key spec, in priority order."""
+        if "oids" in spec:
+            return [str(oid) for oid in spec["oids"]]
+        return [str(spec["oid"])]
 
     def _derive_states(self, data: dict[str, Any]) -> dict[str, Any]:
         """Derive human-readable and binary states."""
