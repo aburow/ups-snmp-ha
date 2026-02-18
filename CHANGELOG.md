@@ -2,6 +2,14 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.0.3] - 2026-02-18
+
+- Add robust handling for missing OIDs by distinguishing `noSuchObject` / `noSuchInstance` / `endOfMibView` from empty values
+- Cache unsupported OIDs per device and skip them on future polls
+- Add UPS-MIB output load fallback from `.1.3.6.1.2.1.33.1.4.4.1.5.1` to `.1.3.6.1.2.1.33.1.4.4.1.5.0` for devices with alternate indexing
+- Add multi-OID key resolution support so metrics can probe OIDs in priority order
+- Update documentation and debugging guidance for fast/slow polling behavior and RFC1628 walk troubleshooting
+
 ## [1.0.3-dev2] - 2026-02-18
 
 - Add UPS-MIB output load fallback for devices exposing `upsOutputPercentLoad` at `.5.0` instead of `.5.1`
