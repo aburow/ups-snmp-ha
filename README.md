@@ -6,17 +6,21 @@
 
 Home Assistant integration for monitoring UPS devices via SNMP with a focus on RFC1628 (UPS-MIB) and a fallback to APC enterprise OIDs when RFC1628 is unavailable.
 
-Current release: 0.4.7
-
 This custom component runs standalone and does not require NUT or APCUPSD.
 
 ## Features
 
 - **SNMP-only polling** with per-device config entries
 - **RFC1628 UPS-MIB first**, APC enterprise fallback when needed
+- **Cross-vendor output load support**:
+  - UPS-MIB `upsOutputPercentLoad` with index fallback (`...5.1` then `...5.0`)
+  - APC enterprise output load fallback when UPS-MIB is unavailable
 - **Fast/slow polling split**:
-  - Fast (default 10s): AC power state + remaining runtime
+  - Fast (default 10s): AC power state + remaining runtime + output load
   - Slow (default 5 min): inventory + other sensors
+- **Missing OID suppression**:
+  - Detects non-existent OIDs (`noSuchObject` / `noSuchInstance`) and skips them on future polls
+  - Keeps empty/null values as non-fatal responses
 - **Local communication** (no cloud dependency)
 - **Event-loop safe SNMP** (pysnmp work offloaded to executor)
 - **No new dependencies** beyond Home Assistant’s bundled pysnmp
@@ -86,27 +90,59 @@ Useful debug signals to look for:
 
 Check for SNMP connectivity and community string correctness. If a device does not expose UPS-MIB, the integration will automatically fall back to APC enterprise OIDs when available.
 
+For RFC1628 debugging, collect a full UPS-MIB walk:
+
+```bash
+snmpwalk -v2c -c <community> <ups_host_or_ip> 1.3.6.1.2.1.33
+```
+
+Not all SNMP implementations are created equal. Even when a device claims adherence to a given RFC (such as RFC 1628), differences in interpretation, partial implementations, and resource constraints can result in incomplete or non-conformant MIBs and unreliable GETBULK behavior, despite advertising SNMPv2c or later. For this reason, the integration uses defensive SNMP querying rather than relying solely on declared RFC compliance; when reporting issues, please include the device manufacturer, model, firmware version, SNMP version, affected OIDs or tables, and what query methods (if any) work reliably.
+
 ## Architecture
 
 - Here’s a concise block diagram of the integration and responsibilities:
 
-```mermaid
-flowchart TB
-  HA["Home Assistant<br/>(core runtime + scheduler)"]
-  COORD["UpsSnmpCoordinator<br/>- schedules fast/slow polls<br/>- detects MIB + SNMP version<br/>- merges/derives states<br/>- raises UpdateFailed on<br/>  no data"]
-  SNMP["snmp_helper<br/>- sends SNMP queries<br/>- runs in executor threads<br/>- handles timeouts/errors<br/>- filters missing/empty OIDs"]
-  UPS["UPS device (SNMP agent)<br/>- exposes UPS-MIB/APC OIDs"]
-  ENT["Sensor/Binary Sensor modules<br/>- map coordinator data to<br/>  HA entities and attributes"]
-
-  HA --> COORD
-  COORD -- "periodic updates" --> SNMP
-  SNMP -- "SNMP GETs (executor)" --> UPS
-  COORD --> ENT
+```text
++------------------------------------------------------+
+| Home Assistant (core runtime + scheduler)            |
++------------------------------------------------------+
+                         |
+                         v
++------------------------------------------------------+
+| UpsSnmpCoordinator                                    |
+| - schedules fast/slow polls                          |
+| - detects MIB + SNMP version                         |
+| - merges SNMP data + derived states                  |
+| - suppresses missing OIDs after detection            |
+| - raises UpdateFailed on no data                     |
++------------------------------------------------------+
+                |                            |
+                | entity updates             | polling
+                v                            v
++---------------------------------------------+   +------------------------------------------------------+
+| Sensor / Binary Sensor modules             |   | snmp_helper                                          |
+| - map coordinator data to HA entities      |   | - sends SNMP queries                                 |
+| - expose values/states to HA               |   | - runs in executor threads                           |
++---------------------------------------------+   | - distinguishes missing OIDs from empty/null values |
+                                                  +------------------------------------------------------+
+                                                      ^                           ^
+                                                      | Fast poll (10s default)  | Slow poll (300s default)
+                                                      | - output source/state    | - inventory + other stats
+                                                      | - runtime remaining      |
+                                                      | - output load            |
+                                                      +---------------------------+
+                                                                   |
+                                                                   | SNMP GETs (executor)
+                                                                   v
+                                                  +------------------------------------------------------+
+                                                  | UPS device (SNMP agent)                              |
+                                                  | - exposes UPS-MIB and/or APC enterprise OIDs         |
+                                                  +------------------------------------------------------+
 ```
 
 Component responsibilities (short list):
 
 - UpsSnmpCoordinator: polling cadence, MIB detection, data normalization, derived states, error handling.
-- snmp_helper: SNMP transport, per-OID GETs, missing/empty value handling, executor offload.
+- snmp_helper: SNMP transport, per-OID GETs, missing-OID detection, empty/null handling, executor offload.
 - sensor.py / binary_sensor.py: entity definitions and presentation in HA.
 - UPS SNMP agent: provides OID values via UPS-MIB/APC enterprise OIDs.

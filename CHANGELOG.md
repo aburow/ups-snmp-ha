@@ -2,6 +2,25 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.0.3-dev2] - 2026-02-18
+
+- Add UPS-MIB output load fallback for devices exposing `upsOutputPercentLoad` at `.5.0` instead of `.5.1`
+- Add multi-OID key resolution so a metric can try OIDs in priority order
+
+## [1.0.3-dev1] - 2026-02-18
+
+- Detect non-existent OIDs (`noSuchObject` / `noSuchInstance` / `endOfMibView`) separately from empty/null values
+- Cache and skip unsupported OIDs on future polls for each device
+
+## [1.0.2] - 2026-02-18
+
+- Move `output_load` to fast polling (default 10s), matching runtime cadence
+
+## [1.0.1] - 2026-02-18
+
+- Add `output_load` sensor entity (`%`) for Home Assistant
+- Add RFC1628 UPS-MIB output load OID support alongside existing APC enterprise support
+
 ## [1.0.0] - 2026-02-08
 
 - Mark the integration as stable 1.0.0 with no functional changes since 0.4.7
