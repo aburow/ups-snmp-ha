@@ -20,6 +20,7 @@ from .const import (
     DOMAIN,
     KEY_COORDINATOR,
     SNMP_SENSOR_DESCRIPTIONS,
+    sensor_icon_for_key,
 )
 from .coordinator import UpsSnmpCoordinator
 
@@ -37,19 +38,26 @@ async def async_setup_entry(
     _LOGGER.debug("Setting up %d SNMP sensors", len(sensor_descriptions))
 
     async_add_entities(
-        UpsSnmpSensor(coordinator, description, entry.entry_id) for description in sensor_descriptions
+        UpsSnmpSensor(coordinator, description, entry.entry_id)
+        for description in sensor_descriptions
     )
 
 
 class UpsSnmpSensor(CoordinatorEntity, SensorEntity):
-    """Representation of a UPS SNMP sensor."""
+    """Expose coordinator UPS values as Home Assistant sensor entities."""
 
     has_entity_name = True
 
-    def __init__(self, coordinator: UpsSnmpCoordinator, description: UpsSnmpSensorDescription, entry_id: str) -> None:
+    def __init__(
+        self,
+        coordinator: UpsSnmpCoordinator,
+        description: UpsSnmpSensorDescription,
+        entry_id: str,
+    ) -> None:
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_{description.key}"
+        self._attr_icon = sensor_icon_for_key(description.key, description.data_key)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=coordinator.device_name,

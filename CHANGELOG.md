@@ -2,6 +2,16 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.0] - 2026-04-11
+
+- Add deterministic `mdi:` icon resolution for sensors and binary sensors to avoid frontend fallback icon mismatches
+- Add semantic icon mapping helpers keyed by entity key/data key patterns, including future dynamic key families
+- Add state-aware binary sensor icons for on/off representation
+- Add local `uv` + `pre-commit` lint framework with manual tasks (`make lint`, `make lint-fix`, `make lint-security`)
+- Add manual security/style hooks for semgrep, sqlfluff, shellcheck, shfmt, and CodeQL
+- Add project-local CodeQL runner isolation to avoid cross-repo concurrency collisions
+- Refresh developer documentation for lint bootstrap and execution flow
+
 ## [1.0.3] - 2026-02-18
 
 - Add robust handling for missing OIDs by distinguishing `noSuchObject` / `noSuchInstance` / `endOfMibView` from empty values

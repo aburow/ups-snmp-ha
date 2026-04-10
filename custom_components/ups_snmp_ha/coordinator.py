@@ -44,7 +44,9 @@ UPS_MIB_OIDS: dict[str, dict[str, Any]] = {
     "output_source_raw": {"oid": "1.3.6.1.2.1.33.1.4.1.0"},
     "output_frequency": {"oid": "1.3.6.1.2.1.33.1.4.2.0", "scale": 0.1},
     "output_line_count": {"oid": "1.3.6.1.2.1.33.1.4.3.0"},
-    "output_load": {"oids": ["1.3.6.1.2.1.33.1.4.4.1.5.1", "1.3.6.1.2.1.33.1.4.4.1.5.0"]},
+    "output_load": {
+        "oids": ["1.3.6.1.2.1.33.1.4.4.1.5.1", "1.3.6.1.2.1.33.1.4.4.1.5.0"]
+    },
     "bypass_frequency": {"oid": "1.3.6.1.2.1.33.1.5.1.0", "scale": 0.1},
     "bypass_line_count": {"oid": "1.3.6.1.2.1.33.1.5.2.0"},
     "alarms_present": {"oid": "1.3.6.1.2.1.33.1.6.1.0"},
@@ -58,7 +60,10 @@ APC_MIB_OIDS: dict[str, dict[str, Any]] = {
     "battery_status": {"oid": "1.3.6.1.4.1.318.1.1.1.2.1.1.0"},
     "battery_charge": {"oid": "1.3.6.1.4.1.318.1.1.1.2.2.1.0"},
     "battery_temperature": {"oid": "1.3.6.1.4.1.318.1.1.1.2.2.2.0"},
-    "runtime_remaining": {"oid": "1.3.6.1.4.1.318.1.1.1.2.2.3.0", "timeticks_minutes": True},
+    "runtime_remaining": {
+        "oid": "1.3.6.1.4.1.318.1.1.1.2.2.3.0",
+        "timeticks_minutes": True,
+    },
     "output_source_raw": {"oid": "1.3.6.1.4.1.318.1.1.1.4.1.1.0"},
     "output_voltage": {"oid": "1.3.6.1.4.1.318.1.1.1.4.2.1.0"},
     "output_frequency": {"oid": "1.3.6.1.4.1.318.1.1.1.4.2.2.0"},
@@ -192,7 +197,10 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         fast_data = await self._fetch_keys(protocol_oids, fast_keys)
 
         slow_data: dict[str, Any] = {}
-        if now - self._last_slow_poll >= self.slow_poll_interval or self._last_slow_poll == 0.0:
+        if (
+            now - self._last_slow_poll >= self.slow_poll_interval
+            or self._last_slow_poll == 0.0
+        ):
             slow_keys = set(protocol_oids.keys()) - fast_keys
             slow_data = await self._fetch_keys(protocol_oids, slow_keys)
             if slow_data:
@@ -235,9 +243,13 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return
 
         self.protocol = UPS_MIB
-        _LOGGER.warning("Unable to detect SNMP protocol for %s, defaulting to UPS-MIB", self.host)
+        _LOGGER.warning(
+            "Unable to detect SNMP protocol for %s, defaulting to UPS-MIB", self.host
+        )
 
-    async def _try_protocol(self, protocol: str, oid_map: dict[str, dict[str, Any]], version: str) -> bool:
+    async def _try_protocol(
+        self, protocol: str, oid_map: dict[str, dict[str, Any]], version: str
+    ) -> bool:
         """Try to fetch a single identifying OID."""
         if protocol == UPS_MIB:
             test_oid = oid_map["output_source_raw"]["oid"]
@@ -253,9 +265,13 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass=self.hass,
         )
         result = values.get(test_oid)
-        return result is not None and result.value is not None and not result.missing_oid
+        return (
+            result is not None and result.value is not None and not result.missing_oid
+        )
 
-    async def _fetch_keys(self, oid_map: dict[str, dict[str, Any]], keys: set[str]) -> dict[str, Any]:
+    async def _fetch_keys(
+        self, oid_map: dict[str, dict[str, Any]], keys: set[str]
+    ) -> dict[str, Any]:
         """Fetch and normalize SNMP values for a set of keys."""
         oids: list[str] = []
         for key in keys:
@@ -349,12 +365,14 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         on_battery = int(output_source_raw) in battery_values
         ac_power = int(output_source_raw) in normal_values
 
-        derived.update({
-            "output_source": output_source_text,
-            "on_battery": on_battery,
-            "ac_power": ac_power,
-            "on_bypass": output_source_text == "bypass",
-        })
+        derived.update(
+            {
+                "output_source": output_source_text,
+                "on_battery": on_battery,
+                "ac_power": ac_power,
+                "on_bypass": output_source_text == "bypass",
+            }
+        )
 
         return derived
 

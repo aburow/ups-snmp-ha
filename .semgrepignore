@@ -1,0 +1,5 @@
+.tools/
+localonly/
+docs/
+__pycache__/
+.venv/

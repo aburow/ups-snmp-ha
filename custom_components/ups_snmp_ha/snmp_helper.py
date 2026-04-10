@@ -66,7 +66,9 @@ async def _async_get_snmp_value(
     try:
         _LOGGER.debug("SNMP query to %s OID %s (timeout=%ds)", host, oid, timeout)
 
-        target = await UdpTransportTarget.create((host, 161), timeout=timeout, retries=3)
+        target = await UdpTransportTarget.create(
+            (host, 161), timeout=timeout, retries=3
+        )
 
         error_indication, error_status, error_index, var_binds = await get_cmd(
             SnmpEngine(),
@@ -77,8 +79,10 @@ async def _async_get_snmp_value(
         )
 
         if error_indication:
-            _LOGGER.debug("SNMP error from %s (OID %s): %s", host, oid, error_indication)
-            return None
+            _LOGGER.debug(
+                "SNMP error from %s (OID %s): %s", host, oid, error_indication
+            )
+            return SnmpValue(value=None, missing_oid=False)
         if error_status:
             _LOGGER.debug(
                 "SNMP error status from %s (OID %s): %s at index %s",
@@ -87,32 +91,52 @@ async def _async_get_snmp_value(
                 error_status.prettyPrint(),
                 error_index,
             )
-            return None
+            return SnmpValue(value=None, missing_oid=False)
 
         for var_bind in var_binds:
             value_obj = var_bind[1]
             if _is_missing_oid_value(value_obj):
                 _LOGGER.debug("SNMP query reports missing OID %s", oid)
                 return SnmpValue(value=None, missing_oid=True)
-            if isinstance(value_obj, Null) or getattr(value_obj, "isSameTypeWith", None) and value_obj.isSameTypeWith(Null()):
+            if (
+                isinstance(value_obj, Null)
+                or getattr(value_obj, "isSameTypeWith", None)
+                and value_obj.isSameTypeWith(Null())
+            ):
                 _LOGGER.debug("SNMP query returned null value for OID %s", oid)
                 return SnmpValue(value=None, missing_oid=False)
             value = str(value_obj).strip()
             if not value:
                 _LOGGER.debug("SNMP query returned empty value for OID %s", oid)
                 return SnmpValue(value=None, missing_oid=False)
-            _LOGGER.debug("SNMP query succeeded: %s=%s", oid, value[:50] if len(value) > 50 else value)
+            _LOGGER.debug(
+                "SNMP query succeeded: %s=%s",
+                oid,
+                value[:50] if len(value) > 50 else value,
+            )
             return SnmpValue(value=value, missing_oid=False)
 
         _LOGGER.debug("SNMP query returned no value for OID %s", oid)
         return SnmpValue(value=None, missing_oid=False)
 
     except asyncio.TimeoutError:
-        _LOGGER.warning("SNMP query to %s timed out after %ds for OID %s", host, timeout, oid)
+        _LOGGER.warning(
+            "SNMP query to %s timed out after %ds for OID %s", host, timeout, oid
+        )
         return SnmpValue(value=None, missing_oid=False)
+    except asyncio.CancelledError:
+        raise
     except Exception as err:
-        _LOGGER.debug("SNMP query failed for %s (OID %s): %s (%s)", host, oid, err, type(err).__name__)
-        return SnmpValue(value=None, missing_oid=False)
+        if isinstance(err, (OSError, ValueError, RuntimeError)):
+            _LOGGER.debug(
+                "SNMP query failed for %s (OID %s): %s (%s)",
+                host,
+                oid,
+                err,
+                type(err).__name__,
+            )
+            return SnmpValue(value=None, missing_oid=False)
+        raise
 
 
 async def _async_get_snmp_values(
@@ -127,7 +151,10 @@ async def _async_get_snmp_values(
         return {}
 
     results = await asyncio.gather(
-        *[_async_get_snmp_value(host, oid, community, timeout, version) for oid in oids],
+        *[
+            _async_get_snmp_value(host, oid, community, timeout, version)
+            for oid in oids
+        ],
         return_exceptions=True,
     )
 
@@ -167,7 +194,9 @@ async def async_get_snmp_values(
 
     if use_executor:
         if hass is None:
-            raise RuntimeError("Home Assistant instance required for executor SNMP calls")
+            raise RuntimeError(
+                "Home Assistant instance required for executor SNMP calls"
+            )
         return await hass.async_add_executor_job(
             _get_snmp_values_sync, host, oids, community, timeout, version
         )

@@ -17,6 +17,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     UpsSnmpBinarySensorDescription,
+    binary_sensor_icon_for_key,
     DOMAIN,
     KEY_COORDINATOR,
     SNMP_BINARY_SENSOR_DESCRIPTIONS,
@@ -37,19 +38,28 @@ async def async_setup_entry(
     _LOGGER.debug("Setting up %d SNMP binary sensors", len(binary_sensor_descriptions))
 
     async_add_entities(
-        UpsSnmpBinarySensor(coordinator, description, entry.entry_id) for description in binary_sensor_descriptions
+        UpsSnmpBinarySensor(coordinator, description, entry.entry_id)
+        for description in binary_sensor_descriptions
     )
 
 
 class UpsSnmpBinarySensor(CoordinatorEntity, BinarySensorEntity):
-    """Binary sensor for UPS SNMP states."""
+    """Expose UPS boolean/status values as binary sensor entities."""
 
     has_entity_name = True
 
-    def __init__(self, coordinator: UpsSnmpCoordinator, description: UpsSnmpBinarySensorDescription, entry_id: str) -> None:
+    def __init__(
+        self,
+        coordinator: UpsSnmpCoordinator,
+        description: UpsSnmpBinarySensorDescription,
+        entry_id: str,
+    ) -> None:
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_{description.key}"
+        self._attr_icon = binary_sensor_icon_for_key(
+            None, description.key, description.data_key
+        )
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=coordinator.device_name,
@@ -66,3 +76,12 @@ class UpsSnmpBinarySensor(CoordinatorEntity, BinarySensorEntity):
         if value is None:
             return None
         return bool(value)
+
+    @property
+    def icon(self) -> str:
+        """Return a deterministic mdi icon for this binary sensor."""
+        return binary_sensor_icon_for_key(
+            self.is_on,
+            self.entity_description.key,
+            self.entity_description.data_key,
+        )

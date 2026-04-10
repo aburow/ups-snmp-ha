@@ -69,7 +69,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a UPS SNMP config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, SUPPORTED_PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        entry, SUPPORTED_PLATFORMS
+    )
 
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)

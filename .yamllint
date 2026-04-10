@@ -1,0 +1,9 @@
+---
+extends: default
+
+ignore: |
+  .tools/
+
+rules:
+  document-start: disable
+  truthy: disable

@@ -4,3 +4,12 @@ localonly/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Local lint/tooling
+.tools/
+.ruff_cache/
+.pytest_cache/
+.sqlfluff
+.codeql-db/
+codeql-results.sarif
+uv.lock

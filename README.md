@@ -146,3 +146,33 @@ Component responsibilities (short list):
 - snmp_helper: SNMP transport, per-OID GETs, missing-OID detection, empty/null handling, executor offload.
 - sensor.py / binary_sensor.py: entity definitions and presentation in HA.
 - UPS SNMP agent: provides OID values via UPS-MIB/APC enterprise OIDs.
+
+## Developer Linting
+
+This repository uses `uv` + `pre-commit` for local linting.
+
+```bash
+# Prepare lint environment and tools
+make lint-bootstrap
+
+# Run standard hooks (quick pass)
+make lint-fast
+
+# Run all hooks including manual-stage checks
+make lint
+
+# Apply auto-fixable Ruff changes
+make lint-fix
+
+# Run CodeQL security scan (requires codeql installed)
+make lint-security
+```
+
+To run hooks automatically on every commit:
+
+```bash
+uv sync --group lint
+uv run pre-commit install
+```
+
+Manual-stage hooks include `yamllint`, `shellcheck`, `shfmt`, `sqlfluff`, and `semgrep`.

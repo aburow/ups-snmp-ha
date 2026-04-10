@@ -37,7 +37,7 @@ DATA_SCHEMA = vol.Schema(
 
 
 class UpsSnmpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle UPS SNMP config flow."""
+    """Collect host and polling settings for a UPS SNMP config entry."""
 
     VERSION = 1
 
