@@ -2,6 +2,11 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.1-dev2] - 2026-04-11
+
+- Expand unified sensor icon mapping with explicit state/condition keys for `buzzer_muted`, power/failure states, overload, bypass, and output conditions
+- Prioritize these state/condition keys before generic `load`/`status` matches to improve deterministic icon selection for alarm-like metrics
+
 ## [1.1.1-dev1] - 2026-04-11
 
 - Replace in-module icon pattern tables with the shared standalone [icons_unified.py] icon resolver

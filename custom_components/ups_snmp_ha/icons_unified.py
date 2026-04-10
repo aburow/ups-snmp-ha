@@ -51,7 +51,16 @@ SENSOR_ICON_MAPPING: tuple[tuple[tuple[str, ...], str], ...] = (
     (("runtime", "seconds_on_battery"), "mdi:timer-outline"),
     (("delay",), "mdi:timer-outline"),
     (("duration",), "mdi:timer-outline"),
-    # Load and gauge metrics
+    # State/condition sensors (specific before general load)
+    (("buzzer_muted",), "mdi:volume-off"),
+    (("input_fail", "bypass_fail", "general_error"), "mdi:alert-circle"),
+    (("inverter_off",), "mdi:power"),
+    (("load_on_source",), "mdi:power-plug"),
+    (("no_output", "output_off", "output_disabled"), "mdi:power-plug-off"),
+    (("output_shorted",), "mdi:flash-alert"),
+    (("overload", "bypass_overload"), "mdi:car-brake-alert"),
+    (("bypass",), "mdi:transit-detour"),
+    # Load and gauge metrics (after more specific state patterns)
     (("load",), "mdi:gauge"),
     (("line_count", "phase_count"), "mdi:transmission-tower"),
     # Status and state indicators (specific before general)
