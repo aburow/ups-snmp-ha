@@ -58,7 +58,7 @@ class UpsSnmpBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self.entity_description = description
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_{description.key}"
         self._attr_icon = binary_sensor_icon_for_key(
-            None, description.key, description.data_key
+            description.key, description.data_key
         )
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
@@ -81,7 +81,6 @@ class UpsSnmpBinarySensor(CoordinatorEntity, BinarySensorEntity):
     def icon(self) -> str:
         """Return a deterministic mdi icon for this binary sensor."""
         return binary_sensor_icon_for_key(
-            self.is_on,
             self.entity_description.key,
             self.entity_description.data_key,
         )

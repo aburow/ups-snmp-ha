@@ -2,6 +2,12 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.1-dev1] - 2026-04-11
+
+- Replace in-module icon pattern tables with the shared standalone [icons_unified.py] icon resolver
+- Add `custom_components/ups_snmp_ha/icons_unified.py` as the canonical cross-project icon mapping source
+- Keep deterministic icon assignment in entity setup while delegating all mapping logic to unified resolver functions
+
 ## [1.1.0] - 2026-04-11
 
 - Add deterministic `mdi:` icon resolution for sensors and binary sensors to avoid frontend fallback icon mismatches
