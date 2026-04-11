@@ -14,9 +14,18 @@ from datetime import timedelta
 from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    SNMP_BINARY_SENSOR_DESCRIPTIONS,
+    SNMP_SENSOR_DESCRIPTIONS,
+)
+from .sensor_availability_unified import (
+    is_core_local_metric,
+    resolve_canonical_metric,
+)
 from .snmp_helper import async_get_snmp_values
 
 _LOGGER = logging.getLogger(__name__)
@@ -96,6 +105,23 @@ BATTERY_STATUS_MAP = {
     4: "depleted",
 }
 
+FAST_POLL_KEYS = frozenset(
+    {
+        "output_source_raw",
+        "runtime_remaining",
+        "output_load",
+        "seconds_on_battery",
+        "battery_charge",
+        "input_voltage",
+    }
+)
+
+REQUIRED_PROFILE_KEYS = frozenset(
+    {"manufacturer", "model", "serial_number", "firmware", "name"}
+)
+
+REQUIRED_DEPENDENCY_KEYS = frozenset({"output_source_raw"})
+
 
 class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that polls UPS data via SNMP."""
@@ -141,6 +167,9 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._backoff_base = 2
         self._backoff_max = 60
         self._unsupported_oids: set[str] = set()
+        self._fast_poll_keys = FAST_POLL_KEYS
+        self._sensor_entity_keys = {d.key for d in SNMP_SENSOR_DESCRIPTIONS}
+        self._binary_entity_keys = {d.key for d in SNMP_BINARY_SENSOR_DESCRIPTIONS}
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from UPS via SNMP."""
@@ -186,14 +215,8 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self._detect_protocol()
 
         protocol_oids = UPS_MIB_OIDS if self.protocol == UPS_MIB else APC_MIB_OIDS
-        fast_keys = {
-            "output_source_raw",
-            "runtime_remaining",
-            "output_load",
-            "seconds_on_battery",
-            "battery_charge",
-            "input_voltage",
-        }
+        selected_keys = self._selected_poll_keys(protocol_oids)
+        fast_keys = selected_keys & self._fast_poll_keys
         fast_data = await self._fetch_keys(protocol_oids, fast_keys)
 
         slow_data: dict[str, Any] = {}
@@ -201,7 +224,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             now - self._last_slow_poll >= self.slow_poll_interval
             or self._last_slow_poll == 0.0
         ):
-            slow_keys = set(protocol_oids.keys()) - fast_keys
+            slow_keys = selected_keys - fast_keys
             slow_data = await self._fetch_keys(protocol_oids, slow_keys)
             if slow_data:
                 self._last_slow_poll = now
@@ -215,6 +238,69 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._update_metadata(data)
 
         return data
+
+    def _selected_poll_keys(self, oid_map: dict[str, dict[str, Any]]) -> set[str]:
+        """Return protocol OID keys to poll based on core and enabled entities."""
+        protocol_keys = set(oid_map.keys())
+        core_poll_keys = {key for key in protocol_keys if is_core_local_metric(key)}
+        profile_keys = protocol_keys & REQUIRED_PROFILE_KEYS
+        dependency_keys = protocol_keys & REQUIRED_DEPENDENCY_KEYS
+
+        enabled_entity_keys = self._enabled_entity_keys()
+        enabled_canonical_metrics = {
+            canonical
+            for key in enabled_entity_keys
+            if (canonical := resolve_canonical_metric(key))
+        }
+
+        enabled_poll_keys = {
+            key
+            for key in protocol_keys
+            if resolve_canonical_metric(key) in enabled_canonical_metrics
+        }
+
+        return core_poll_keys | profile_keys | dependency_keys | enabled_poll_keys
+
+    def _enabled_entity_keys(self) -> set[str]:
+        """Return local entity keys that are currently enabled in entity registry."""
+        entity_registry = er.async_get(self.hass)
+        enabled: set[str] = set()
+
+        for key in self._sensor_entity_keys:
+            unique_id = f"{DOMAIN}_{self._entry_id}_{key}"
+            if self._is_entity_enabled(entity_registry, "sensor", unique_id, key):
+                enabled.add(key)
+
+        for key in self._binary_entity_keys:
+            unique_id = f"{DOMAIN}_{self._entry_id}_{key}"
+            if self._is_entity_enabled(
+                entity_registry, "binary_sensor", unique_id, key
+            ):
+                enabled.add(key)
+
+        return enabled
+
+    @staticmethod
+    def _is_entity_enabled(
+        entity_registry: er.EntityRegistry,
+        entity_domain: str,
+        unique_id: str,
+        local_key: str,
+    ) -> bool:
+        """Return whether an entity is enabled, honoring default core behavior."""
+        entity_id = entity_registry.async_get_entity_id(
+            entity_domain, DOMAIN, unique_id
+        )
+        default_enabled = is_core_local_metric(local_key)
+
+        if entity_id is None:
+            return default_enabled
+
+        registry_entry = entity_registry.async_get(entity_id)
+        if registry_entry is None:
+            return default_enabled
+
+        return not registry_entry.disabled
 
     def _handle_update_failure(self, err: Exception) -> None:
         """Apply backoff for repeated failures."""

@@ -2,6 +2,16 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.1-dev3] - 2026-04-11
+
+- Add dependency-free unified availability template for canonical core metric membership and local key adapters
+- Default-enable only core entities; non-core entities are Entity Registry opt-in by default
+- Make SNMP polling protocol-aware and availability-aware:
+  - poll protocol-valid core keys by default (APC and non-APC aware)
+  - poll non-core keys only when their entities are enabled
+  - keep required profiling and derived-state dependency keys always polled
+- Keep protocol detection, device profiling, and missing-OID suppression behavior unchanged
+
 ## [1.1.1-dev2] - 2026-04-11
 
 - Expand unified sensor icon mapping with explicit state/condition keys for `buzzer_muted`, power/failure states, overload, bypass, and output conditions

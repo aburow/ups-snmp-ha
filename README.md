@@ -18,6 +18,12 @@ This custom component runs standalone and does not require NUT or APCUPSD.
 - **Fast/slow polling split**:
   - Fast (default 10s): AC power state + remaining runtime + output load
   - Slow (default 5 min): inventory + other sensors
+- **Core-first entity defaults**:
+  - Core UPS entities are enabled by default
+  - Non-core entities are created disabled by default and can be enabled in Entity Registry
+- **Enabled-only non-core polling**:
+  - Core and profiling keys are always polled
+  - Non-core SNMP keys are polled only when their entities are enabled
 - **Missing OID suppression**:
   - Detects non-existent OIDs (`noSuchObject` / `noSuchInstance`) and skips them on future polls
   - Keeps empty/null values as non-fatal responses

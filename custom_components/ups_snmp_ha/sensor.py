@@ -23,6 +23,7 @@ from .const import (
     sensor_icon_for_key,
 )
 from .coordinator import UpsSnmpCoordinator
+from .sensor_availability_unified import entity_enabled_default
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,6 +59,9 @@ class UpsSnmpSensor(CoordinatorEntity, SensorEntity):
         self.entity_description = description
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_{description.key}"
         self._attr_icon = sensor_icon_for_key(description.key, description.data_key)
+        self._attr_entity_registry_enabled_default = entity_enabled_default(
+            description.key
+        )
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=coordinator.device_name,
