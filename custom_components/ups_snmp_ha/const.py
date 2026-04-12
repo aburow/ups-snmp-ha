@@ -27,7 +27,8 @@ CONF_SLOW_POLL_INTERVAL = "slow_poll_interval"
 
 KEY_COORDINATOR = "coordinator"
 
-SUPPORTED_PLATFORMS = ["sensor", "binary_sensor"]
+SUPPORTED_PLATFORMS = ["sensor", "binary_sensor", "button"]
+SERVICE_RESET_MONITORS = "reset_monitors"
 
 
 @dataclass

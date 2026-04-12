@@ -1,0 +1,12 @@
+reset_monitors:
+  name: Reset Monitors
+  description: >
+    Reset sensor/binary-sensor enablement to integration defaults. Core monitors
+    are enabled and non-core monitors are disabled unless enabled manually.
+  fields:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry ID. If omitted, applies to all UPS SNMP entries.
+      required: false
+      selector:
+        text:

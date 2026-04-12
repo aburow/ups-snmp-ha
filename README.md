@@ -104,6 +104,21 @@ snmpwalk -v2c -c <community> <ups_host_or_ip> 1.3.6.1.2.1.33
 
 Not all SNMP implementations are created equal. Even when a device claims adherence to a given RFC (such as RFC 1628), differences in interpretation, partial implementations, and resource constraints can result in incomplete or non-conformant MIBs and unreliable GETBULK behavior, despite advertising SNMPv2c or later. For this reason, the integration uses defensive SNMP querying rather than relying solely on declared RFC compliance; when reporting issues, please include the device manufacturer, model, firmware version, SNMP version, affected OIDs or tables, and what query methods (if any) work reliably.
 
+### Reset Monitors to Defaults
+
+If you have many devices and want to quickly revert monitoring to the integration defaults:
+
+- Use the per-device button entity: `Reset Monitors`
+- Or call the service: `ups_snmp_ha.reset_monitors`
+
+Service behavior:
+- No `entry_id` argument: applies to all UPS SNMP config entries
+- With `entry_id`: applies only to that one UPS SNMP config entry
+
+Result:
+- Core monitors are enabled
+- Non-core monitors are disabled (users can re-enable manually)
+
 ## Architecture
 
 - Here’s a concise block diagram of the integration and responsibilities:

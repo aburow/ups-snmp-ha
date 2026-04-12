@@ -2,6 +2,13 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.1-dev4] - 2026-04-12
+
+- Harden `sensor_availability_unified.entity_enabled_default()` to never raise and return `True` on exception, matching ups-docker-ha compatibility contract requirements
+- Confirm additive contract compliance for external module loading from ups-docker-ha:
+  - `icons_unified.py` exports required icon resolvers with `mdi:*` defaults
+  - `sensor_availability_unified.py` exports `entity_enabled_default(local_entity_key: str) -> bool`
+
 ## [1.1.1-dev3] - 2026-04-11
 
 - Add dependency-free unified availability template for canonical core metric membership and local key adapters

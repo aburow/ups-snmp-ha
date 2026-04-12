@@ -73,5 +73,11 @@ def is_core_local_metric(local_key: str) -> bool:
 
 
 def entity_enabled_default(local_entity_key: str) -> bool:
-    """Return default entity-registry enabled state for a local entity key."""
+    """Return default entity-registry enabled state for a local entity key.
+
+    This function is consumed by external runtimes (for example ups-docker-ha)
+    and must never raise. For unknown/failure cases we use safe default True.
+    """
+    if not isinstance(local_entity_key, str) or not local_entity_key:
+        return True
     return is_core_local_metric(local_entity_key)

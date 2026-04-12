@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import logging
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import (
@@ -24,11 +25,19 @@ from .const import (
     DEFAULT_SNMP_COMMUNITY,
     DOMAIN,
     KEY_COORDINATOR,
+    SERVICE_RESET_MONITORS,
     SUPPORTED_PLATFORMS,
 )
 from .coordinator import UpsSnmpCoordinator
+from .monitor_defaults import async_reset_monitor_defaults
 
 _LOGGER = logging.getLogger(__name__)
+
+SERVICE_SCHEMA_RESET_MONITORS = vol.Schema(
+    {
+        vol.Optional("entry_id"): str,
+    }
+)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -62,6 +71,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         KEY_COORDINATOR: coordinator,
     }
 
+    if not hass.services.has_service(DOMAIN, SERVICE_RESET_MONITORS):
+
+        async def _async_handle_reset_monitors(call: ServiceCall) -> None:
+            requested_entry_id = call.data.get("entry_id")
+            if requested_entry_id:
+                target_entry_ids = [requested_entry_id]
+            else:
+                target_entry_ids = list(hass.config_entries.async_entries(DOMAIN))
+                target_entry_ids = [
+                    entry_obj.entry_id for entry_obj in target_entry_ids
+                ]
+
+            summary = await async_reset_monitor_defaults(hass, target_entry_ids)
+            _LOGGER.info(
+                "Reset monitor defaults service completed (processed=%d changed=%d target_entries=%d)",
+                summary["processed"],
+                summary["changed"],
+                len(target_entry_ids),
+            )
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_RESET_MONITORS,
+            _async_handle_reset_monitors,
+            schema=SERVICE_SCHEMA_RESET_MONITORS,
+        )
+
     await hass.config_entries.async_forward_entry_setups(entry, SUPPORTED_PLATFORMS)
 
     return True
@@ -75,5 +111,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
+
+        remaining_entries = hass.config_entries.async_entries(DOMAIN)
+        if not remaining_entries and hass.services.has_service(
+            DOMAIN, SERVICE_RESET_MONITORS
+        ):
+            hass.services.async_remove(DOMAIN, SERVICE_RESET_MONITORS)
 
     return unload_ok
