@@ -6,7 +6,8 @@ reset_monitors:
   fields:
     entry_id:
       name: Entry ID
-      description: Optional config entry ID. If omitted, applies to all UPS SNMP entries.
+      description: >
+        Optional config entry ID. If omitted, applies to all UPS SNMP entries.
       required: false
       selector:
         text:

@@ -167,6 +167,7 @@ Component responsibilities (short list):
 - snmp_helper: SNMP transport, per-OID GETs, missing-OID detection, empty/null handling, executor offload.
 - sensor.py / binary_sensor.py: entity definitions and presentation in HA.
 - icons_unified.py: shared standalone icon mapping resolver used as the canonical source across UPS projects.
+- device_info_unified.py: shared standalone device metadata resolver for ups-docker-ha bridge discovery payloads.
 - UPS SNMP agent: provides OID values via UPS-MIB/APC enterprise OIDs.
 
 ## Developer Linting

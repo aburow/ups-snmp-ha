@@ -38,7 +38,9 @@ async def async_reset_monitor_defaults(
     processed = 0
 
     for entry_id in entry_ids:
-        for registry_entry in er.async_entries_for_config_entry(entity_registry, entry_id):
+        for registry_entry in er.async_entries_for_config_entry(
+            entity_registry, entry_id
+        ):
             if registry_entry.domain not in SUPPORTED_ENTITY_DOMAINS:
                 continue
             local_key = _extract_local_key(entry_id, registry_entry.unique_id)

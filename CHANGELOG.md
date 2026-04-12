@@ -2,6 +2,13 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.1-dev5] - 2026-04-12
+
+- Add `custom_components/ups_snmp_ha/device_info_unified.py` for ups-docker-ha bridge compatibility
+- Export `CONTRACT_VERSION = "1.0"` and `resolve_device_info(values, source)` with canonical device metadata output
+- Ensure device info resolver is dependency-free, HA-import free, deterministic, and safe-fallback (`{}`) for unsupported/malformed inputs
+- Add acceptance tests for bridge contract behavior in `tests/test_device_info_unified.py`
+
 ## [1.1.1-dev4] - 2026-04-12
 
 - Harden `sensor_availability_unified.entity_enabled_default()` to never raise and return `True` on exception, matching ups-docker-ha compatibility contract requirements
