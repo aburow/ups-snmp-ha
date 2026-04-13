@@ -2,6 +2,18 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.1-dev6] - 2026-04-13
+
+- Add `custom_components/ups_snmp_ha/capability_profile_unified.py` with UPS Unified interop contract version `2.0.0`
+- Define SNMP capability profiles for UPS-MIB and APC-MIB with canonical `oids`, `snmp_blocks`, and `poll_groups`
+- Keep coordinator runtime behavior intact while sourcing fast-poll keys from capability profile metadata
+- Harden `icons_unified.resolve_sensor_icon()` / `resolve_binary_sensor_icon()` against malformed inputs
+- Add contract acceptance tests in `tests/test_unified_contract.py`:
+  - dependency-free module import checks
+  - interface no-raise behavior
+  - canonical/non-empty device info output
+  - profile key, block, and poll-group schema validation
+
 ## [1.1.1-dev5] - 2026-04-12
 
 - Add `custom_components/ups_snmp_ha/device_info_unified.py` for ups-docker-ha bridge compatibility

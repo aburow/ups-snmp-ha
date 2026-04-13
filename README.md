@@ -168,6 +168,7 @@ Component responsibilities (short list):
 - sensor.py / binary_sensor.py: entity definitions and presentation in HA.
 - icons_unified.py: shared standalone icon mapping resolver used as the canonical source across UPS projects.
 - device_info_unified.py: shared standalone device metadata resolver for ups-docker-ha bridge discovery payloads.
+- capability_profile_unified.py: shared contract v2 capability profiles (`contract_version`, `poll_groups`, `snmp_blocks`) for UPS Unified interoperability.
 - UPS SNMP agent: provides OID values via UPS-MIB/APC enterprise OIDs.
 
 ## Developer Linting

@@ -111,32 +111,40 @@ BINARY_SENSOR_DEFAULT_ICON = "mdi:help-circle-outline"
 
 
 def _match_icon(
-    register_key: str,
+    metric_key: object,
     mapping: tuple[tuple[tuple[str, ...], str], ...],
     default_icon: str,
 ) -> str:
     """Resolve icon by matching key against pattern tuples.
 
     Args:
-        register_key: The metric/register key to match (e.g. "battery_capacity")
+        metric_key: The metric/register key to match (e.g. "battery_capacity")
         mapping: Tuple of (patterns, icon) pairs
         default_icon: Icon to return if no patterns match
 
     Returns:
         Material Design Icon string (e.g. "mdi:battery")
     """
-    key_lower = register_key.lower()
+    if isinstance(metric_key, str):
+        key_text = metric_key.strip().lower()
+    elif isinstance(metric_key, (int, float, bool)):
+        key_text = str(metric_key).strip().lower()
+    else:
+        return default_icon
+    if not key_text:
+        return default_icon
+
     for patterns, icon in mapping:
-        if any(pattern in key_lower for pattern in patterns):
+        if any(pattern in key_text for pattern in patterns):
             return icon
     return default_icon
 
 
-def resolve_sensor_icon(register_key: str) -> str:
+def resolve_sensor_icon(metric_key: str) -> str:
     """Resolve a deterministic mdi icon for a sensor/metric key.
 
     Args:
-        register_key: The metric/register key (e.g. "battery_capacity")
+        metric_key: The metric/register key (e.g. "battery_capacity")
 
     Returns:
         Material Design Icon string like "mdi:battery"
@@ -149,14 +157,14 @@ def resolve_sensor_icon(register_key: str) -> str:
         >>> resolve_sensor_icon("runtime_remaining")
         "mdi:timer-outline"
     """
-    return _match_icon(register_key, SENSOR_ICON_MAPPING, SENSOR_DEFAULT_ICON)
+    return _match_icon(metric_key, SENSOR_ICON_MAPPING, SENSOR_DEFAULT_ICON)
 
 
-def resolve_binary_sensor_icon(register_key: str) -> str:
+def resolve_binary_sensor_icon(metric_key: str) -> str:
     """Resolve a deterministic mdi icon for a binary sensor key.
 
     Args:
-        register_key: The binary sensor/condition key (e.g. "battery_low")
+        metric_key: The binary sensor/condition key (e.g. "battery_low")
 
     Returns:
         Material Design Icon string like "mdi:battery-alert"
@@ -170,5 +178,5 @@ def resolve_binary_sensor_icon(register_key: str) -> str:
         "mdi:power-plug"
     """
     return _match_icon(
-        register_key, BINARY_SENSOR_ICON_MAPPING, BINARY_SENSOR_DEFAULT_ICON
+        metric_key, BINARY_SENSOR_ICON_MAPPING, BINARY_SENSOR_DEFAULT_ICON
     )

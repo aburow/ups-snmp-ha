@@ -17,6 +17,15 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .capability_profile_unified import (
+    APC_MIB,
+    APC_MIB_OIDS,
+    REQUIRED_DEPENDENCY_KEYS,
+    REQUIRED_PROFILE_KEYS,
+    UPS_MIB,
+    UPS_MIB_OIDS,
+    fast_poll_keys_for,
+)
 from .const import (
     DOMAIN,
     SNMP_BINARY_SENSOR_DESCRIPTIONS,
@@ -29,57 +38,6 @@ from .sensor_availability_unified import (
 from .snmp_helper import async_get_snmp_values
 
 _LOGGER = logging.getLogger(__name__)
-
-UPS_MIB = "ups_mib"
-APC_MIB = "apc_mib"
-
-
-UPS_MIB_OIDS: dict[str, dict[str, Any]] = {
-    "manufacturer": {"oid": "1.3.6.1.2.1.33.1.1.1.0"},
-    "model": {"oid": "1.3.6.1.2.1.33.1.1.2.0"},
-    "firmware": {"oid": "1.3.6.1.2.1.33.1.1.3.0"},
-    "name": {"oid": "1.3.6.1.2.1.33.1.1.5.0"},
-    "battery_status": {"oid": "1.3.6.1.2.1.33.1.2.1.0"},
-    "seconds_on_battery": {"oid": "1.3.6.1.2.1.33.1.2.2.0"},
-    "runtime_remaining": {"oid": "1.3.6.1.2.1.33.1.2.3.0"},
-    "battery_charge": {"oid": "1.3.6.1.2.1.33.1.2.4.0"},
-    "battery_voltage": {"oid": "1.3.6.1.2.1.33.1.2.5.0", "scale": 0.1},
-    "battery_temperature": {"oid": "1.3.6.1.2.1.33.1.2.7.0"},
-    "input_line_count": {"oid": "1.3.6.1.2.1.33.1.3.2.0"},
-    "input_frequency": {"oid": "1.3.6.1.2.1.33.1.3.3.1.2.1", "scale": 0.1},
-    "input_voltage": {"oid": "1.3.6.1.2.1.33.1.3.3.1.3.1"},
-    "input_current": {"oid": "1.3.6.1.2.1.33.1.3.3.1.4.1", "scale": 0.1},
-    "input_power": {"oid": "1.3.6.1.2.1.33.1.3.3.1.5.1"},
-    "output_source_raw": {"oid": "1.3.6.1.2.1.33.1.4.1.0"},
-    "output_frequency": {"oid": "1.3.6.1.2.1.33.1.4.2.0", "scale": 0.1},
-    "output_line_count": {"oid": "1.3.6.1.2.1.33.1.4.3.0"},
-    "output_load": {
-        "oids": ["1.3.6.1.2.1.33.1.4.4.1.5.1", "1.3.6.1.2.1.33.1.4.4.1.5.0"]
-    },
-    "bypass_frequency": {"oid": "1.3.6.1.2.1.33.1.5.1.0", "scale": 0.1},
-    "bypass_line_count": {"oid": "1.3.6.1.2.1.33.1.5.2.0"},
-    "alarms_present": {"oid": "1.3.6.1.2.1.33.1.6.1.0"},
-}
-
-APC_MIB_OIDS: dict[str, dict[str, Any]] = {
-    "model": {"oid": "1.3.6.1.4.1.318.1.1.1.1.1.1.0"},
-    "name": {"oid": "1.3.6.1.4.1.318.1.1.1.1.1.2.0"},
-    "firmware": {"oid": "1.3.6.1.4.1.318.1.1.1.1.2.1.0"},
-    "serial_number": {"oid": "1.3.6.1.4.1.318.1.1.1.1.2.3.0"},
-    "battery_status": {"oid": "1.3.6.1.4.1.318.1.1.1.2.1.1.0"},
-    "battery_charge": {"oid": "1.3.6.1.4.1.318.1.1.1.2.2.1.0"},
-    "battery_temperature": {"oid": "1.3.6.1.4.1.318.1.1.1.2.2.2.0"},
-    "runtime_remaining": {
-        "oid": "1.3.6.1.4.1.318.1.1.1.2.2.3.0",
-        "timeticks_minutes": True,
-    },
-    "output_source_raw": {"oid": "1.3.6.1.4.1.318.1.1.1.4.1.1.0"},
-    "output_voltage": {"oid": "1.3.6.1.4.1.318.1.1.1.4.2.1.0"},
-    "output_frequency": {"oid": "1.3.6.1.4.1.318.1.1.1.4.2.2.0"},
-    "output_load": {"oid": "1.3.6.1.4.1.318.1.1.1.4.2.3.0"},
-    "input_voltage": {"oid": "1.3.6.1.4.1.318.1.1.1.3.2.1.0"},
-    "input_frequency": {"oid": "1.3.6.1.4.1.318.1.1.1.3.2.4.0"},
-}
 
 UPS_OUTPUT_SOURCE_MAP = {
     1: "other",
@@ -104,23 +62,6 @@ BATTERY_STATUS_MAP = {
     3: "low",
     4: "depleted",
 }
-
-FAST_POLL_KEYS = frozenset(
-    {
-        "output_source_raw",
-        "runtime_remaining",
-        "output_load",
-        "seconds_on_battery",
-        "battery_charge",
-        "input_voltage",
-    }
-)
-
-REQUIRED_PROFILE_KEYS = frozenset(
-    {"manufacturer", "model", "serial_number", "firmware", "name"}
-)
-
-REQUIRED_DEPENDENCY_KEYS = frozenset({"output_source_raw"})
 
 
 class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -167,7 +108,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._backoff_base = 2
         self._backoff_max = 60
         self._unsupported_oids: set[str] = set()
-        self._fast_poll_keys = FAST_POLL_KEYS
+        self._fast_poll_keys = fast_poll_keys_for(UPS_MIB)
         self._sensor_entity_keys = {d.key for d in SNMP_SENSOR_DESCRIPTIONS}
         self._binary_entity_keys = {d.key for d in SNMP_BINARY_SENSOR_DESCRIPTIONS}
 
@@ -215,6 +156,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self._detect_protocol()
 
         protocol_oids = UPS_MIB_OIDS if self.protocol == UPS_MIB else APC_MIB_OIDS
+        self._fast_poll_keys = fast_poll_keys_for(self.protocol)
         selected_keys = self._selected_poll_keys(protocol_oids)
         fast_keys = selected_keys & self._fast_poll_keys
         fast_data = await self._fetch_keys(protocol_oids, fast_keys)
