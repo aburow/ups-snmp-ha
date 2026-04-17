@@ -137,7 +137,8 @@ def fast_poll_keys_for(protocol_key: str) -> frozenset[str]:
     return frozenset(
         key
         for key, spec in oids.items()
-        if isinstance(spec, dict) and spec.get("poll_group", DEFAULT_POLL_GROUP) == "fast"
+        if isinstance(spec, dict)
+        and spec.get("poll_group", DEFAULT_POLL_GROUP) == "fast"
     )
 
 
@@ -163,14 +164,18 @@ def validate_capability_profiles() -> list[str]:
             errors.append(f"{profile_key}: poll_groups must be a mapping")
             poll_groups = {}
         if DEFAULT_POLL_GROUP not in poll_groups:
-            errors.append(f"{profile_key}: missing default poll group '{DEFAULT_POLL_GROUP}'")
+            errors.append(
+                f"{profile_key}: missing default poll group '{DEFAULT_POLL_GROUP}'"
+            )
 
         for metric_key, spec in oids.items():
             if not isinstance(spec, dict):
                 errors.append(f"{profile_key}.{metric_key}: spec must be a mapping")
                 continue
             if "oid" not in spec and "oids" not in spec:
-                errors.append(f"{profile_key}.{metric_key}: must define 'oid' or 'oids'")
+                errors.append(
+                    f"{profile_key}.{metric_key}: must define 'oid' or 'oids'"
+                )
             group = spec.get("poll_group", DEFAULT_POLL_GROUP)
             if group not in poll_groups:
                 errors.append(

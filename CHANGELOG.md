@@ -2,6 +2,12 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.1-dev7] - 2026-04-17
+
+- Add info-level coordinator update-cycle boundary logs (`Starting update cycle`, `Update cycle complete`) for normal runtime visibility
+- Add info-level coordinator poll timing breakdown (`total`, `lock_wait`, `snmp_locked`, `protocol_detect`, `fast_fetch`, `slow_fetch`, `derive`, `metadata`) for hotspot isolation
+- Update README troubleshooting guidance for timing instrumentation
+
 ## [1.1.1-dev6] - 2026-04-13
 
 - Add `custom_components/ups_snmp_ha/capability_profile_unified.py` with UPS Unified interop contract version `2.0.0`

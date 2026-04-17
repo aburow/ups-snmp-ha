@@ -1,6 +1,6 @@
 [project]
 name = "ups-snmp-ha"
-version = "1.1.1-dev6"
+version = "1.1.1-dev7"
 requires-python = ">=3.13"
 
 [dependency-groups]

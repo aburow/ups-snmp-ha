@@ -88,9 +88,10 @@ logger:
     custom_components.ups_snmp_ha.snmp_helper: debug
 ```
 
-Useful debug signals to look for:
+Useful poll/timing signals to look for:
 
-- `Starting SNMP update` with device name, host, entry_id
+- `Starting update cycle` and `Update cycle complete in ...s`
+- `Poll timing breakdown ... total, lock_wait, snmp_locked, protocol_detect, fast_fetch, slow_fetch, derive, metadata`
 - `Waited Xs for SNMP lock` when overlapping polls are serialized
 - `SNMP update failed ... backing off` for exponential backoff on failures
 

@@ -115,14 +115,22 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from UPS via SNMP."""
         now = time.monotonic()
+        poll_start = time.monotonic()
+        lock_wait = 0.0
+        snmp_locked_elapsed = 0.0
+        protocol_detect_elapsed = 0.0
+        fast_fetch_elapsed = 0.0
+        slow_fetch_elapsed = 0.0
+        derive_elapsed = 0.0
+        metadata_elapsed = 0.0
 
         if self._backoff_until and now < self._backoff_until:
             raise UpdateFailed(
                 f"{self.device_name} {self.host}: backoff active for {self._backoff_until - now:.1f}s"
             )
 
-        _LOGGER.debug(
-            "Starting SNMP update for %s (%s, entry_id=%s)",
+        _LOGGER.info(
+            "Starting update cycle for %s (%s, entry_id=%s)",
             self.device_name,
             self.host,
             self._entry_id,
@@ -131,15 +139,22 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         lock_started = time.monotonic()
         try:
             async with self._io_lock:
-                waited = time.monotonic() - lock_started
-                if waited > 0.001:
+                lock_wait = time.monotonic() - lock_started
+                if lock_wait > 0.001:
                     _LOGGER.debug(
                         "Waited %.3fs for SNMP lock (%s, entry_id=%s)",
-                        waited,
+                        lock_wait,
                         self.host,
                         self._entry_id,
                     )
-                data = await self._async_update_data_locked(now)
+                locked_start = time.monotonic()
+                data, phase_timings = await self._async_update_data_locked(now)
+                snmp_locked_elapsed = time.monotonic() - locked_start
+                protocol_detect_elapsed = phase_timings["protocol_detect"]
+                fast_fetch_elapsed = phase_timings["fast_fetch"]
+                slow_fetch_elapsed = phase_timings["slow_fetch"]
+                derive_elapsed = phase_timings["derive"]
+                metadata_elapsed = phase_timings["metadata"]
         except Exception as err:
             self._handle_update_failure(err)
             if isinstance(err, UpdateFailed):
@@ -148,18 +163,56 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._failure_count = 0
         self._backoff_until = 0.0
+
+        _LOGGER.info(
+            "Update cycle complete in %.3fs for %s (%s, entry_id=%s)",
+            snmp_locked_elapsed,
+            self.device_name,
+            self.host,
+            self._entry_id,
+        )
+        _LOGGER.info(
+            "Poll timing breakdown for %s (%s, entry_id=%s): total=%.3fs, lock_wait=%.3fs, "
+            "snmp_locked=%.3fs, protocol_detect=%.3fs, fast_fetch=%.3fs, slow_fetch=%.3fs, "
+            "derive=%.3fs, metadata=%.3fs",
+            self.device_name,
+            self.host,
+            self._entry_id,
+            time.monotonic() - poll_start,
+            lock_wait,
+            snmp_locked_elapsed,
+            protocol_detect_elapsed,
+            fast_fetch_elapsed,
+            slow_fetch_elapsed,
+            derive_elapsed,
+            metadata_elapsed,
+        )
+
         return data
 
-    async def _async_update_data_locked(self, now: float) -> dict[str, Any]:
+    async def _async_update_data_locked(
+        self, now: float
+    ) -> tuple[dict[str, Any], dict[str, float]]:
         """Fetch data from UPS via SNMP with the I/O lock held."""
+        protocol_detect_elapsed = 0.0
+        fast_fetch_elapsed = 0.0
+        slow_fetch_elapsed = 0.0
+        derive_elapsed = 0.0
+        metadata_elapsed = 0.0
+
         if self.protocol is None:
+            protocol_detect_start = time.monotonic()
             await self._detect_protocol()
+            protocol_detect_elapsed = time.monotonic() - protocol_detect_start
 
         protocol_oids = UPS_MIB_OIDS if self.protocol == UPS_MIB else APC_MIB_OIDS
         self._fast_poll_keys = fast_poll_keys_for(self.protocol)
         selected_keys = self._selected_poll_keys(protocol_oids)
         fast_keys = selected_keys & self._fast_poll_keys
+
+        fast_fetch_start = time.monotonic()
         fast_data = await self._fetch_keys(protocol_oids, fast_keys)
+        fast_fetch_elapsed = time.monotonic() - fast_fetch_start
 
         slow_data: dict[str, Any] = {}
         if (
@@ -167,7 +220,9 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             or self._last_slow_poll == 0.0
         ):
             slow_keys = selected_keys - fast_keys
+            slow_fetch_start = time.monotonic()
             slow_data = await self._fetch_keys(protocol_oids, slow_keys)
+            slow_fetch_elapsed = time.monotonic() - slow_fetch_start
             if slow_data:
                 self._last_slow_poll = now
 
@@ -176,10 +231,21 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         data: dict[str, Any] = {**self.data, **slow_data, **fast_data}
 
+        derive_start = time.monotonic()
         data.update(self._derive_states(data))
-        self._update_metadata(data)
+        derive_elapsed = time.monotonic() - derive_start
 
-        return data
+        metadata_start = time.monotonic()
+        self._update_metadata(data)
+        metadata_elapsed = time.monotonic() - metadata_start
+
+        return data, {
+            "protocol_detect": protocol_detect_elapsed,
+            "fast_fetch": fast_fetch_elapsed,
+            "slow_fetch": slow_fetch_elapsed,
+            "derive": derive_elapsed,
+            "metadata": metadata_elapsed,
+        }
 
     def _selected_poll_keys(self, oid_map: dict[str, dict[str, Any]]) -> set[str]:
         """Return protocol OID keys to poll based on core and enabled entities."""
