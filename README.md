@@ -170,6 +170,7 @@ Component responsibilities (short list):
 - icons_unified.py: shared standalone icon mapping resolver used as the canonical source across UPS projects.
 - device_info_unified.py: shared standalone device metadata resolver for ups-docker-ha bridge discovery payloads.
 - capability_profile_unified.py: shared contract v2 capability profiles (`contract_version`, `poll_groups`, `snmp_blocks`) for UPS Unified interoperability.
+- sensor_catalog_unified.py: shared dependency-free exhaustive/selectable sensor catalog for downstream picklists (does not change unified contract exposure semantics).
 - UPS SNMP agent: provides OID values via UPS-MIB/APC enterprise OIDs.
 
 ## Developer Linting

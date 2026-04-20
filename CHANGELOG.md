@@ -2,6 +2,13 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.1.1-dev8] - 2026-04-20
+
+- Add `custom_components/ups_snmp_ha/sensor_catalog_unified.py` as a dependency-free, import-free unified sensor catalog for downstream selection/picklists
+- Keep unified contract behavior unchanged; catalog metadata remains exhaustive/selectable only and does not alter default exposure semantics
+- Add profile-aligned static catalog entries for `ups_snmp_ups_mib` and `ups_snmp_apc_mib` with canonical key + alias normalization
+- Align catalog file path with the integration package (`custom_components/ups_snmp_ha/`) and document intentional `ups_snmp_ups_mib` `serial_number` omission due to missing static OID mapping
+
 ## [1.1.1-dev7] - 2026-04-17
 
 - Add info-level coordinator update-cycle boundary logs (`Starting update cycle`, `Update cycle complete`) for normal runtime visibility
