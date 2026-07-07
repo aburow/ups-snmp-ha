@@ -9,6 +9,6 @@ lint = [
   "pre-commit>=4.5.0,<5",
   "ruff==0.15.4",
   "semgrep==1.156.0",
-  "sqlfluff==3.4.2",
+  "sqlfluff==4.2.0",
   "yamllint==1.37.1",
 ]
