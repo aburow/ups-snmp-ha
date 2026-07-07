@@ -2,6 +2,13 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.2.1-dev2] - 2026-07-08
+
+### Fixed
+
+- Removed the Home Assistant `snmp` integration dependency introduced in `1.2.1-dev1`, avoiding SNMP package conflicts during integration setup.
+- Removed the legacy `pysnmp-lextudio` compatibility import path and restored the existing modern PySNMP API used by supported Home Assistant installations.
+
 ## [1.2.1-dev1] - 2026-07-08
 
 ### Added

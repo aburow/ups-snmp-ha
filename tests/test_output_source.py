@@ -57,12 +57,8 @@ class OutputSourceTests(unittest.TestCase):
 
     def test_ups_mib_battery_and_bypass_states(self) -> None:
         """Preserve battery and bypass state derivation."""
-        self.assertTrue(
-            self.module.derive_output_states("ups_mib", 5)["on_battery"]
-        )
-        self.assertTrue(
-            self.module.derive_output_states("ups_mib", 4)["on_bypass"]
-        )
+        self.assertTrue(self.module.derive_output_states("ups_mib", 5)["on_battery"])
+        self.assertTrue(self.module.derive_output_states("ups_mib", 4)["on_bypass"])
 
     def test_apc_mib_values(self) -> None:
         """Map common APC enterprise output-source semantics."""
