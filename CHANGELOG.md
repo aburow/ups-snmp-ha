@@ -2,6 +2,29 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.2.0] - 2026-07-07
+
+### Added
+
+- Added shared, dependency-free unified icon, availability, device information, capability profile, and sensor catalog modules for cross-project interoperability.
+- Added UPS-MIB and APC-MIB capability metadata with canonical OIDs, SNMP blocks, poll groups, sensor keys, aliases, units, and categories.
+- Added a reset-monitors button and service for restoring core and non-core entity defaults.
+- Added contract acceptance tests for standalone loading, safe fallback behavior, canonical device information, and capability-profile schemas.
+- Added coordinator update-cycle and detailed poll-timing logs for runtime performance diagnosis.
+
+### Fixed
+
+- Normalized the root license text so GitHub Licensee and HACS identify the repository as GNU AGPLv3.
+- Corrected source SPDX identifiers to `AGPL-3.0-or-later`.
+- Hardened unified icon and availability resolvers against malformed input.
+- Prioritized state and condition icon keys for deterministic alarm, overload, bypass, and power-state presentation.
+
+### Changed
+
+- Default-enabled only core entities and made non-core polling follow Entity Registry enablement while preserving required profiling and derived-state dependencies.
+- Moved project-specific licensing information to the README and kept the root `LICENSE` canonical.
+- Updated authoritative integration and package version metadata for the 1.2.0 release.
+
 ## [1.1.1-dev8] - 2026-04-20
 
 - Add `custom_components/ups_snmp_ha/sensor_catalog_unified.py` as a dependency-free, import-free unified sensor catalog for downstream selection/picklists
