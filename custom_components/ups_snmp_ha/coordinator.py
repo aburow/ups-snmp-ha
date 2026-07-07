@@ -31,6 +31,7 @@ from .const import (
     SNMP_BINARY_SENSOR_DESCRIPTIONS,
     SNMP_SENSOR_DESCRIPTIONS,
 )
+from .output_source import derive_output_states
 from .sensor_availability_unified import (
     is_core_local_metric,
     resolve_canonical_metric,
@@ -38,23 +39,6 @@ from .sensor_availability_unified import (
 from .snmp_helper import async_get_snmp_values
 
 _LOGGER = logging.getLogger(__name__)
-
-UPS_OUTPUT_SOURCE_MAP = {
-    1: "other",
-    2: "none",
-    3: "normal",
-    4: "bypass",
-    5: "battery",
-    6: "booster",
-    7: "reducer",
-}
-
-APC_OUTPUT_SOURCE_MAP = {
-    1: "other",
-    2: "normal",
-    3: "battery",
-    4: "bypass",
-}
 
 BATTERY_STATUS_MAP = {
     1: "unknown",
@@ -91,6 +75,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.slow_poll_interval = max(10, int(slow_poll_interval))
         self._last_slow_poll = 0.0
         self.protocol: str | None = None
+        self.apc_mib_available = False
         self.snmp_version = "2c"
 
         self.data: dict[str, Any] = {}
@@ -212,6 +197,12 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         fast_fetch_start = time.monotonic()
         fast_data = await self._fetch_keys(protocol_oids, fast_keys)
+        if self.apc_mib_available and self.protocol != APC_MIB:
+            apc_output_data = await self._fetch_keys(
+                APC_MIB_OIDS, {"output_source_raw"}
+            )
+            if apc_output_source_raw := apc_output_data.get("output_source_raw"):
+                fast_data["apc_output_status_raw"] = apc_output_source_raw
         fast_fetch_elapsed = time.monotonic() - fast_fetch_start
 
         slow_data: dict[str, Any] = {}
@@ -325,40 +316,51 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     async def _detect_protocol(self) -> None:
-        """Detect which SNMP MIB is available and the SNMP version."""
+        """Detect telemetry MIB and APC enrichment in one timeout window."""
+        ups_output_oid = UPS_MIB_OIDS["output_source_raw"]["oid"]
+        apc_model_oid = APC_MIB_OIDS["model"]["oid"]
+        sys_object_id_oid = "1.3.6.1.2.1.1.2.0"
+        probe_oids = [ups_output_oid, apc_model_oid, sys_object_id_oid]
+
         for version in ("2c", "1"):
-            if await self._try_protocol(UPS_MIB, UPS_MIB_OIDS, version):
-                self.protocol = UPS_MIB
+            values = await async_get_snmp_values(
+                host=self.host,
+                oids=probe_oids,
+                community=self.community,
+                timeout=5,
+                version=version,
+                hass=self.hass,
+            )
+            has_ups_mib = self._probe_succeeded(values.get(ups_output_oid))
+            has_apc_model = self._probe_succeeded(values.get(apc_model_oid))
+            sys_object_id_result = values.get(sys_object_id_oid)
+            sys_object_id = (
+                str(sys_object_id_result.value).lstrip(".")
+                if self._probe_succeeded(sys_object_id_result)
+                else ""
+            )
+            has_apc_mib = has_apc_model or sys_object_id.startswith("1.3.6.1.4.1.318.")
+            if has_ups_mib or has_apc_mib:
+                self.protocol = UPS_MIB if has_ups_mib else APC_MIB
+                self.apc_mib_available = has_apc_mib
                 self.snmp_version = version
-                return
-            if await self._try_protocol(APC_MIB, APC_MIB_OIDS, version):
-                self.protocol = APC_MIB
-                self.snmp_version = version
+                _LOGGER.debug(
+                    "Detected telemetry MIB %s (APC PowerNet available=%s) for %s",
+                    self.protocol,
+                    self.apc_mib_available,
+                    self.host,
+                )
                 return
 
         self.protocol = UPS_MIB
+        self.apc_mib_available = False
         _LOGGER.warning(
             "Unable to detect SNMP protocol for %s, defaulting to UPS-MIB", self.host
         )
 
-    async def _try_protocol(
-        self, protocol: str, oid_map: dict[str, dict[str, Any]], version: str
-    ) -> bool:
-        """Try to fetch a single identifying OID."""
-        if protocol == UPS_MIB:
-            test_oid = oid_map["output_source_raw"]["oid"]
-        else:
-            test_oid = oid_map["model"]["oid"]
-
-        values = await async_get_snmp_values(
-            host=self.host,
-            oids=[test_oid],
-            community=self.community,
-            timeout=5,
-            version=version,
-            hass=self.hass,
-        )
-        result = values.get(test_oid)
+    @staticmethod
+    def _probe_succeeded(result: Any) -> bool:
+        """Return whether an SNMP discovery probe produced a usable value."""
         return (
             result is not None and result.value is not None and not result.missing_oid
         )
@@ -446,27 +448,14 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if output_source_raw is None:
             return derived
 
+        derived.update(derive_output_states(self.protocol, output_source_raw))
+
+        apc_output_status_raw = data.get("apc_output_status_raw")
         if self.protocol == APC_MIB:
-            source_map = APC_OUTPUT_SOURCE_MAP
-            normal_values = {2, 4}
-            battery_values = {3}
-        else:
-            source_map = UPS_OUTPUT_SOURCE_MAP
-            normal_values = {3, 4}
-            battery_values = {5}
-
-        output_source_text = source_map.get(int(output_source_raw), "unknown")
-        on_battery = int(output_source_raw) in battery_values
-        ac_power = int(output_source_raw) in normal_values
-
-        derived.update(
-            {
-                "output_source": output_source_text,
-                "on_battery": on_battery,
-                "ac_power": ac_power,
-                "on_bypass": output_source_text == "bypass",
-            }
-        )
+            apc_output_status_raw = output_source_raw
+        if apc_output_status_raw is not None:
+            apc_states = derive_output_states(APC_MIB, apc_output_status_raw)
+            derived["apc_output_status"] = apc_states["output_source"]
 
         return derived
 

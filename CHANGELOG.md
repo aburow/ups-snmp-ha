@@ -2,6 +2,23 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.2.1-dev1] - 2026-07-08
+
+### Added
+
+- Added a separate `APC Output Status` sensor exposing the complete APC PowerNet output-status detail without replacing RFC1628 `Output Source` values.
+- Added compatibility with both legacy `pysnmp-lextudio`/PySNMP 6 and modern PySNMP 7 APIs while leaving dependency version selection to Home Assistant.
+
+### Fixed
+
+- Treat RFC1628 `booster(6)` and `reducer(7)` as active AC operation so AVR boost/trim no longer reports AC Power as off.
+- Corrected APC PowerNet output-status mappings, including SmartBoost, SmartTrim, bypass variants, and vendor-specific operating modes.
+
+### Changed
+
+- Declared Home Assistant's core `snmp` integration as a dependency without pinning or installing a competing SNMP package.
+- Combined UPS-MIB, APC model, and enterprise identity discovery into one concurrent probe batch per SNMP version to avoid sequential detection delays.
+
 ## [1.2.0] - 2026-07-07
 
 ### Added

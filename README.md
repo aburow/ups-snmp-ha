@@ -31,7 +31,7 @@ Current stable release: **1.2.0**
   - Keeps empty/null values as non-fatal responses
 - **Local communication** (no cloud dependency)
 - **Event-loop safe SNMP** (pysnmp work offloaded to executor)
-- **No new dependencies** beyond Home Assistant’s bundled pysnmp
+- **No separately pinned SNMP dependency**; uses Home Assistant’s supported `snmp` integration and PySNMP version
 
 ## Installation
 

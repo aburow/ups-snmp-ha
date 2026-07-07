@@ -29,6 +29,8 @@ CANONICAL_CORE_METRICS: frozenset[str] = frozenset(
 # Local adapter: UPS SNMP keys -> canonical metrics.
 LOCAL_TO_CANONICAL_METRIC: dict[str, str] = {
     "ac_power": "ac_power",
+    "apc_output_status": "apc_output_status",
+    "apc_output_status_raw": "apc_output_status",
     "alarms_present": "alarms_present",
     "battery_charge": "battery_charge",
     "battery_status": "battery_status",

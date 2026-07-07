@@ -56,6 +56,12 @@ SNMP_SENSOR_DESCRIPTIONS = [
         state_class=None,
     ),
     UpsSnmpSensorDescription(
+        key="apc_output_status",
+        name="APC Output Status",
+        data_key="apc_output_status",
+        state_class=None,
+    ),
+    UpsSnmpSensorDescription(
         key="runtime_remaining",
         name="Runtime Remaining",
         native_unit_of_measurement="min",

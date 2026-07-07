@@ -62,6 +62,8 @@ class UpsSnmpSensor(CoordinatorEntity, SensorEntity):
         self._attr_entity_registry_enabled_default = entity_enabled_default(
             description.key
         )
+        if description.key == "apc_output_status":
+            self._attr_entity_registry_enabled_default = coordinator.apc_mib_available
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=coordinator.device_name,

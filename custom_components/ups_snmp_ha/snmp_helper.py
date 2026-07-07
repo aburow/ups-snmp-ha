@@ -11,15 +11,28 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from pysnmp.hlapi.v3arch.asyncio import (
-    CommunityData,
-    ContextData,
-    ObjectIdentity,
-    ObjectType,
-    SnmpEngine,
-    UdpTransportTarget,
-    get_cmd,
-)
+try:
+    from pysnmp.hlapi.v3arch.asyncio import (
+        CommunityData,
+        ContextData,
+        ObjectIdentity,
+        ObjectType,
+        SnmpEngine,
+        UdpTransportTarget,
+        get_cmd,
+    )
+except ImportError:
+    # Home Assistant versions using pysnmp-lextudio or PySNMP 6 expose the
+    # asyncio API at this legacy path with camelCase command names.
+    from pysnmp.hlapi.asyncio import (  # type: ignore[no-redef]
+        CommunityData,
+        ContextData,
+        ObjectIdentity,
+        ObjectType,
+        SnmpEngine,
+        UdpTransportTarget,
+        getCmd as get_cmd,
+    )
 from pysnmp.proto.rfc1902 import Null
 from pysnmp.proto.rfc1905 import EndOfMibView, NoSuchInstance, NoSuchObject
 
@@ -55,6 +68,15 @@ def _is_missing_oid_value(value: object) -> bool:
     return False
 
 
+async def _async_create_udp_transport_target(
+    host: str, timeout: int
+) -> UdpTransportTarget:
+    """Create a UDP target with the API provided by the installed PySNMP."""
+    if create_target := getattr(UdpTransportTarget, "create", None):
+        return await create_target((host, 161), timeout=timeout, retries=3)
+    return UdpTransportTarget((host, 161), timeout=timeout, retries=3)
+
+
 async def _async_get_snmp_value(
     host: str,
     oid: str,
@@ -66,9 +88,7 @@ async def _async_get_snmp_value(
     try:
         _LOGGER.debug("SNMP query to %s OID %s (timeout=%ds)", host, oid, timeout)
 
-        target = await UdpTransportTarget.create(
-            (host, 161), timeout=timeout, retries=3
-        )
+        target = await _async_create_udp_transport_target(host, timeout)
 
         error_indication, error_status, error_index, var_binds = await get_cmd(
             SnmpEngine(),

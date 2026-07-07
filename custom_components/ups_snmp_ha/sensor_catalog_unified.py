@@ -30,6 +30,14 @@ ALL_SENSORS_UNIFIED = {
         "protocol": "snmp",
         "sensors": [
             {
+                "key": "apc_output_status",
+                "aliases": ["apc_output_status_raw"],
+                "label": "APC Output Status",
+                "source": "derived",
+                "oid": "1.3.6.1.4.1.318.1.1.1.4.1.1.0",
+                "category": "core",
+            },
+            {
                 "key": "output_source",
                 "aliases": ["output_source_raw"],
                 "label": "Output Source",
@@ -221,6 +229,14 @@ ALL_SENSORS_UNIFIED = {
         "profile_id": "ups_snmp_apc_mib",
         "protocol": "snmp",
         "sensors": [
+            {
+                "key": "apc_output_status",
+                "aliases": ["apc_output_status_raw"],
+                "label": "APC Output Status",
+                "source": "derived",
+                "oid": "1.3.6.1.4.1.318.1.1.1.4.1.1.0",
+                "category": "core",
+            },
             {
                 "key": "output_source",
                 "aliases": ["output_source_raw"],
