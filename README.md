@@ -173,6 +173,12 @@ Component responsibilities (short list):
 - sensor_catalog_unified.py: shared dependency-free exhaustive/selectable sensor catalog for downstream picklists (does not change unified contract exposure semantics).
 - UPS SNMP agent: provides OID values via UPS-MIB/APC enterprise OIDs.
 
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 or later.
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+
 ## Developer Linting
 
 This repository uses `uv` + `pre-commit` for local linting.
