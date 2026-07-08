@@ -2,6 +2,13 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.2.1-dev4] - 2026-07-08
+
+### Changed
+
+- Documented the tested hardware matrix in the README, including APC Smart-UPS units with AP9619, AP9630, and AP9631 cards plus CPS OLS3000ERT2UA with RMCARD205.
+- Documented APC Smart-UPS 700 behavior differences across AP9619 and AP9631 cards, including the AP9631 case where RFC1628 output-load OIDs are absent and `APC Output Load` remains the valid load sensor.
+
 ## [1.2.1-dev3] - 2026-07-08
 
 ### Added

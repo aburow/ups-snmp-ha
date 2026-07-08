@@ -78,6 +78,14 @@ The integration attempts SNMPv2c first, then SNMPv1 if required.
 
 Any UPS exposing RFC1628 (UPS-MIB) should work. APC devices with older cards that do not expose UPS-MIB are supported via APC enterprise OIDs for core values.
 
+Tested hardware and management cards:
+
+- APC Smart-UPS 700 with AP9619 NMC, management card MB `v4.1.1`, AOS `v3.9.4`, application `SUMX v3.9.3`, UPS firmware `50.11.I`. This older card exposes APC PowerNet identity OIDs but not the RFC1628 identity OIDs used by newer cards.
+- APC Smart-UPS 700 with AP9631 NMC, management card MB `v4.1.0`, AOS/PF `v7.2.0`, UPS firmware `50.14.I`. RFC1628 runtime/source/charge are present, but RFC1628 `upsOutputPercentLoad` is absent; use `APC Output Load` on this hardware.
+- APC Smart-UPS RT 2000 RM XL with AP9631 NMC, management card MB `v4.1.0`, AOS/PF `v7.1.8`, UPS firmware `418.7.I`.
+- APC Smart-UPS 1500 with AP9630 NMC, management card MB `v4.1.0`, AOS/PF `v7.2.2`, UPS firmware `UPS 15.1 (ID18)`.
+- CPS OLS3000ERT2UA with RMCARD205 SNMP card (`sysDescr`: `UPS SNMP Card`), UPS firmware `OS02RV14`.
+
 ## Troubleshooting
 
 Enable debug logging:
@@ -98,6 +106,11 @@ Useful poll/timing signals to look for:
 - `SNMP update failed ... backing off` for exponential backoff on failures
 
 Check for SNMP connectivity and community string correctness. If a device does not expose UPS-MIB, the integration will automatically fall back to APC enterprise OIDs when available.
+
+Known hardware note:
+
+- APC Smart-UPS 700 with AP9631 NMC and UPS firmware `50.14.I` can expose valid RFC1628 runtime/source/charge data while omitting RFC1628 output-load OIDs entirely. In that case, `Output Load` is expected to stay `Unknown` and `APC Output Load` should be used instead.
+- APC Smart-UPS 700 with AP9619 NMC and UPS firmware `50.11.I` is an older APC PowerNet-only profile for identity/model metadata and should not be treated as equivalent to newer AP963x behavior.
 
 For RFC1628 debugging, collect a full UPS-MIB walk:
 
