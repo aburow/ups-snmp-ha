@@ -97,6 +97,17 @@ class OutputSourceTests(unittest.TestCase):
                 result = self.module.derive_output_states("apc_mib", value)
                 self.assertTrue(result["on_bypass"])
 
+    def test_apc_status_never_reuses_rfc1628_names(self) -> None:
+        """Keep APC status labels native to PowerNet rather than RFC1628."""
+        self.assertEqual(
+            self.module.derive_output_states("apc_mib", 6)["output_source"],
+            "software_bypass",
+        )
+        self.assertEqual(
+            self.module.derive_output_states("apc_mib", 7)["output_source"],
+            "off",
+        )
+
     def test_invalid_value_is_unknown(self) -> None:
         """Do not report an invalid or unrecognized value as AC off."""
         for value in (None, "invalid", 99):

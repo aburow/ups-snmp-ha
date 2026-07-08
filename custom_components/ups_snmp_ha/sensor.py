@@ -35,7 +35,11 @@ async def async_setup_entry(
 ) -> None:
     """Set up the UPS sensors for a config entry."""
     coordinator: UpsSnmpCoordinator = hass.data[DOMAIN][entry.entry_id][KEY_COORDINATOR]
-    sensor_descriptions = SNMP_SENSOR_DESCRIPTIONS
+    sensor_descriptions = [
+        description
+        for description in SNMP_SENSOR_DESCRIPTIONS
+        if coordinator.apc_mib_available or not description.key.startswith("apc_")
+    ]
     _LOGGER.debug("Setting up %d SNMP sensors", len(sensor_descriptions))
 
     async_add_entities(
@@ -62,7 +66,7 @@ class UpsSnmpSensor(CoordinatorEntity, SensorEntity):
         self._attr_entity_registry_enabled_default = entity_enabled_default(
             description.key
         )
-        if description.key == "apc_output_status":
+        if description.key.startswith("apc_"):
             self._attr_entity_registry_enabled_default = coordinator.apc_mib_available
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},

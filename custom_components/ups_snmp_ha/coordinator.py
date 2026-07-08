@@ -47,6 +47,24 @@ BATTERY_STATUS_MAP = {
     4: "depleted",
 }
 
+APC_PARALLEL_ENTITY_TO_MIB_KEY = {
+    "apc_output_status": "output_source_raw",
+    "apc_runtime_remaining": "runtime_remaining",
+    "apc_battery_charge": "battery_charge",
+    "apc_battery_status": "battery_status",
+    "apc_battery_temperature": "battery_temperature",
+    "apc_input_voltage": "input_voltage",
+    "apc_input_frequency": "input_frequency",
+    "apc_output_voltage": "output_voltage",
+    "apc_output_frequency": "output_frequency",
+    "apc_output_load": "output_load",
+    "apc_ac_power": "output_source_raw",
+    "apc_on_battery": "output_source_raw",
+    "apc_on_bypass": "output_source_raw",
+}
+
+APC_PARALLEL_MIB_KEYS = frozenset(APC_PARALLEL_ENTITY_TO_MIB_KEY.values())
+
 
 class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that polls UPS data via SNMP."""
@@ -192,17 +210,20 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         protocol_oids = UPS_MIB_OIDS if self.protocol == UPS_MIB else APC_MIB_OIDS
         self._fast_poll_keys = fast_poll_keys_for(self.protocol)
-        selected_keys = self._selected_poll_keys(protocol_oids)
+        enabled_entity_keys = self._enabled_entity_keys()
+        selected_keys = self._selected_poll_keys(protocol_oids, enabled_entity_keys)
+        apc_selected_keys = self._selected_apc_poll_keys(enabled_entity_keys)
+        if self.protocol == APC_MIB:
+            selected_keys |= apc_selected_keys
         fast_keys = selected_keys & self._fast_poll_keys
+        apc_fast_keys = apc_selected_keys & fast_poll_keys_for(APC_MIB)
 
         fast_fetch_start = time.monotonic()
         fast_data = await self._fetch_keys(protocol_oids, fast_keys)
         if self.apc_mib_available and self.protocol != APC_MIB:
-            apc_output_data = await self._fetch_keys(
-                APC_MIB_OIDS, {"output_source_raw"}
+            fast_data.update(
+                self._prefix_apc_data(await self._fetch_keys(APC_MIB_OIDS, apc_fast_keys))
             )
-            if apc_output_source_raw := apc_output_data.get("output_source_raw"):
-                fast_data["apc_output_status_raw"] = apc_output_source_raw
         fast_fetch_elapsed = time.monotonic() - fast_fetch_start
 
         slow_data: dict[str, Any] = {}
@@ -211,8 +232,15 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             or self._last_slow_poll == 0.0
         ):
             slow_keys = selected_keys - fast_keys
+            apc_slow_keys = apc_selected_keys - apc_fast_keys
             slow_fetch_start = time.monotonic()
             slow_data = await self._fetch_keys(protocol_oids, slow_keys)
+            if self.apc_mib_available and self.protocol != APC_MIB:
+                slow_data.update(
+                    self._prefix_apc_data(
+                        await self._fetch_keys(APC_MIB_OIDS, apc_slow_keys)
+                    )
+                )
             slow_fetch_elapsed = time.monotonic() - slow_fetch_start
             if slow_data:
                 self._last_slow_poll = now
@@ -221,6 +249,8 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed("No SNMP data returned")
 
         data: dict[str, Any] = {**self.data, **slow_data, **fast_data}
+        if self.apc_mib_available and self.protocol == APC_MIB:
+            data.update(self._prefix_apc_data_from_protocol(data))
 
         derive_start = time.monotonic()
         data.update(self._derive_states(data))
@@ -238,14 +268,15 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "metadata": metadata_elapsed,
         }
 
-    def _selected_poll_keys(self, oid_map: dict[str, dict[str, Any]]) -> set[str]:
+    def _selected_poll_keys(
+        self, oid_map: dict[str, dict[str, Any]], enabled_entity_keys: set[str]
+    ) -> set[str]:
         """Return protocol OID keys to poll based on core and enabled entities."""
         protocol_keys = set(oid_map.keys())
         core_poll_keys = {key for key in protocol_keys if is_core_local_metric(key)}
         profile_keys = protocol_keys & REQUIRED_PROFILE_KEYS
         dependency_keys = protocol_keys & REQUIRED_DEPENDENCY_KEYS
 
-        enabled_entity_keys = self._enabled_entity_keys()
         enabled_canonical_metrics = {
             canonical
             for key in enabled_entity_keys
@@ -259,6 +290,15 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
 
         return core_poll_keys | profile_keys | dependency_keys | enabled_poll_keys
+
+    @staticmethod
+    def _selected_apc_poll_keys(enabled_entity_keys: set[str]) -> set[str]:
+        """Return APC PowerNet keys needed for APC-prefixed entities."""
+        return {
+            mib_key
+            for entity_key, mib_key in APC_PARALLEL_ENTITY_TO_MIB_KEY.items()
+            if entity_key in enabled_entity_keys
+        }
 
     def _enabled_entity_keys(self) -> set[str]:
         """Return local entity keys that are currently enabled in entity registry."""
@@ -290,7 +330,7 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         entity_id = entity_registry.async_get_entity_id(
             entity_domain, DOMAIN, unique_id
         )
-        default_enabled = is_core_local_metric(local_key)
+        default_enabled = is_core_local_metric(local_key) or local_key.startswith("apc_")
 
         if entity_id is None:
             return default_enabled
@@ -431,6 +471,20 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return [str(oid) for oid in spec["oids"]]
         return [str(spec["oid"])]
 
+    @staticmethod
+    def _prefix_apc_data(data: dict[str, Any]) -> dict[str, Any]:
+        """Return APC polled values under APC-prefixed local data keys."""
+        return {f"apc_{key}": value for key, value in data.items() if key in APC_PARALLEL_MIB_KEYS}
+
+    @staticmethod
+    def _prefix_apc_data_from_protocol(data: dict[str, Any]) -> dict[str, Any]:
+        """Mirror native APC protocol values into APC-prefixed local data keys."""
+        return {
+            f"apc_{key}": data[key]
+            for key in APC_PARALLEL_MIB_KEYS
+            if key in data
+        }
+
     def _derive_states(self, data: dict[str, Any]) -> dict[str, Any]:
         """Derive human-readable and binary states."""
         output_source_raw = data.get("output_source_raw")
@@ -445,17 +499,27 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             except (TypeError, ValueError):
                 derived["battery_status_text"] = "unknown"
 
+        apc_battery_status = data.get("apc_battery_status")
+        if apc_battery_status is not None:
+            try:
+                derived["apc_battery_status_text"] = BATTERY_STATUS_MAP.get(
+                    int(apc_battery_status), "unknown"
+                )
+            except (TypeError, ValueError):
+                derived["apc_battery_status_text"] = "unknown"
+
         if output_source_raw is None:
-            return derived
+            output_source_raw = None
+        else:
+            derived.update(derive_output_states(self.protocol, output_source_raw))
 
-        derived.update(derive_output_states(self.protocol, output_source_raw))
-
-        apc_output_status_raw = data.get("apc_output_status_raw")
-        if self.protocol == APC_MIB:
-            apc_output_status_raw = output_source_raw
-        if apc_output_status_raw is not None:
-            apc_states = derive_output_states(APC_MIB, apc_output_status_raw)
+        apc_output_source_raw = data.get("apc_output_source_raw")
+        if apc_output_source_raw is not None:
+            apc_states = derive_output_states(APC_MIB, apc_output_source_raw)
             derived["apc_output_status"] = apc_states["output_source"]
+            derived["apc_ac_power"] = apc_states["ac_power"]
+            derived["apc_on_battery"] = apc_states["on_battery"]
+            derived["apc_on_bypass"] = apc_states["on_bypass"]
 
         return derived
 

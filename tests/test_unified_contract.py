@@ -11,6 +11,7 @@ ICONS_PATH = BASE_DIR / "icons_unified.py"
 AVAILABILITY_PATH = BASE_DIR / "sensor_availability_unified.py"
 DEVICE_INFO_PATH = BASE_DIR / "device_info_unified.py"
 PROFILES_PATH = BASE_DIR / "capability_profile_unified.py"
+CATALOG_PATH = BASE_DIR / "sensor_catalog_unified.py"
 
 ALLOWED_DEVICE_INFO_KEYS = {
     "manufacturer",
@@ -42,6 +43,7 @@ class UnifiedInteropContractTests(unittest.TestCase):
         )
         cls.device_info = _load_module("device_info_unified", DEVICE_INFO_PATH)
         cls.profiles = _load_module("capability_profile_unified", PROFILES_PATH)
+        cls.catalog = _load_module("sensor_catalog_unified", CATALOG_PATH)
 
     def test_modules_import_outside_home_assistant(self) -> None:
         """Contract modules must be import-safe without HA runtime."""
@@ -118,6 +120,16 @@ class UnifiedInteropContractTests(unittest.TestCase):
         """No hybrid profile in this SNMP-only project means no cross-collision risk."""
         for profile in self.profiles.CAPABILITY_PROFILES.values():
             self.assertNotEqual(profile.get("protocol"), "hybrid")
+
+    def test_ups_mib_catalog_advertises_parallel_apc_sensors(self) -> None:
+        """UPS-MIB profile should expose APC-prefixed sensors for dual-MIB devices."""
+        ups_mib_sensors = self.catalog.ALL_SENSORS_UNIFIED["ups_snmp_ups_mib"][
+            "sensors"
+        ]
+        keys = {sensor["key"] for sensor in ups_mib_sensors}
+        self.assertIn("apc_output_status", keys)
+        self.assertIn("apc_runtime_remaining", keys)
+        self.assertIn("apc_battery_charge", keys)
 
 
 if __name__ == "__main__":

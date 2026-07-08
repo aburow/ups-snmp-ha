@@ -161,6 +161,68 @@ SNMP_SENSOR_DESCRIPTIONS = [
         state_class=SensorStateClass.MEASUREMENT,
         data_key="seconds_on_battery",
     ),
+    UpsSnmpSensorDescription(
+        key="apc_runtime_remaining",
+        name="APC Runtime Remaining",
+        native_unit_of_measurement="min",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_runtime_remaining",
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_battery_charge",
+        name="APC Battery Charge",
+        native_unit_of_measurement="%",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_battery_charge",
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_battery_status",
+        name="APC Battery Status",
+        data_key="apc_battery_status_text",
+        state_class=None,
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_battery_temperature",
+        name="APC Battery Temperature",
+        native_unit_of_measurement="°C",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_battery_temperature",
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_input_frequency",
+        name="APC Input Frequency",
+        native_unit_of_measurement="Hz",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_input_frequency",
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_input_voltage",
+        name="APC Input Voltage",
+        native_unit_of_measurement="V",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_input_voltage",
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_output_voltage",
+        name="APC Output Voltage",
+        native_unit_of_measurement="V",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_output_voltage",
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_output_frequency",
+        name="APC Output Frequency",
+        native_unit_of_measurement="Hz",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_output_frequency",
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_output_load",
+        name="APC Output Load",
+        native_unit_of_measurement="%",
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_output_load",
+    ),
 ]
 
 SNMP_BINARY_SENSOR_DESCRIPTIONS = [
@@ -181,6 +243,24 @@ SNMP_BINARY_SENSOR_DESCRIPTIONS = [
         name="On Bypass",
         device_class=BinarySensorDeviceClass.POWER,
         data_key="on_bypass",
+    ),
+    UpsSnmpBinarySensorDescription(
+        key="apc_ac_power",
+        name="APC AC Power",
+        device_class=BinarySensorDeviceClass.POWER,
+        data_key="apc_ac_power",
+    ),
+    UpsSnmpBinarySensorDescription(
+        key="apc_on_battery",
+        name="APC On Battery",
+        device_class=BinarySensorDeviceClass.BATTERY,
+        data_key="apc_on_battery",
+    ),
+    UpsSnmpBinarySensorDescription(
+        key="apc_on_bypass",
+        name="APC On Bypass",
+        device_class=BinarySensorDeviceClass.POWER,
+        data_key="apc_on_bypass",
     ),
 ]
 

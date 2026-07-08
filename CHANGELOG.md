@@ -2,6 +2,17 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.2.1-dev3] - 2026-07-08
+
+### Added
+
+- Added APC PowerNet telemetry as parallel `APC ...` sensors and binary sensors when the device exposes the Schneider/APC PowerNet MIB, alongside the existing RFC1628 entities.
+
+### Changed
+
+- Kept RFC1628 and APC PowerNet entity namespaces separate so RFC1628 sensor names always report RFC1628 values and APC sensor names always report APC PowerNet values.
+- Limited APC-prefixed entity creation and polling to devices where APC PowerNet MIB access is detected.
+
 ## [1.2.1-dev2] - 2026-07-08
 
 ### Fixed
