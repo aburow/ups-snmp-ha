@@ -8,7 +8,7 @@ Home Assistant integration for monitoring UPS devices via SNMP with a focus on R
 
 This custom component runs standalone and does not require NUT or APCUPSD.
 
-Current stable release: **1.2.0**
+Current stable release: **1.2.1**
 
 ## Features
 

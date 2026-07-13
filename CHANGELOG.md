@@ -2,6 +2,29 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.2.1] - 2026-07-13
+
+### Added
+
+- Added APC PowerNet telemetry as parallel `APC ...` sensors and binary sensors when the device exposes the Schneider/APC PowerNet MIB, alongside the existing RFC1628 entities.
+- Added a separate `APC Output Status` sensor exposing the complete APC PowerNet output-status detail without replacing RFC1628 `Output Source` values.
+- Added compatibility with both legacy `pysnmp-lextudio`/PySNMP 6 and modern PySNMP 7 APIs while leaving dependency version selection to Home Assistant.
+
+### Fixed
+
+- Removed the Home Assistant `snmp` integration dependency introduced in `1.2.1-dev1`, avoiding SNMP package conflicts during integration setup.
+- Removed the legacy `pysnmp-lextudio` compatibility import path and restored the existing modern PySNMP API used by supported Home Assistant installations.
+- Treat RFC1628 `booster(6)` and `reducer(7)` as active AC operation so AVR boost/trim no longer reports AC Power as off.
+- Corrected APC PowerNet output-status mappings, including SmartBoost, SmartTrim, bypass variants, and vendor-specific operating modes.
+
+### Changed
+
+- Kept RFC1628 and APC PowerNet entity namespaces separate so RFC1628 sensor names always report RFC1628 values and APC sensor names always report APC PowerNet values.
+- Limited APC-prefixed entity creation and polling to devices where APC PowerNet MIB access is detected.
+- Documented the tested hardware matrix in the README, including APC Smart-UPS units with AP9619, AP9630, and AP9631 cards plus CPS OLS3000ERT2UA with RMCARD205.
+- Documented APC Smart-UPS 700 behavior differences across AP9619 and AP9631 cards, including the AP9631 case where RFC1628 output-load OIDs are absent and `APC Output Load` remains the valid load sensor.
+- Combined UPS-MIB, APC model, and enterprise identity discovery into one concurrent probe batch per SNMP version to avoid sequential detection delays.
+
 ## [1.2.1-dev4] - 2026-07-08
 
 ### Changed
