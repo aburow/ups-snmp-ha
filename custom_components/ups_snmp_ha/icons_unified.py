@@ -48,7 +48,7 @@ SENSOR_ICON_MAPPING: tuple[tuple[tuple[str, ...], str], ...] = (
     (("frequency",), "mdi:sine-wave"),
     # Time-based (specific before general)
     (("runtime_low",), "mdi:timer-alert"),
-    (("runtime", "seconds_on_battery"), "mdi:timer-outline"),
+    (("seconds_on_battery"), "mdi:timer-outline"),
     (("delay",), "mdi:timer-outline"),
     (("duration",), "mdi:timer-outline"),
     # State/condition sensors (specific before general load)
