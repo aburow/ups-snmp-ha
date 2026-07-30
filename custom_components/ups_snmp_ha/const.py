@@ -62,6 +62,18 @@ SNMP_SENSOR_DESCRIPTIONS = [
         state_class=None,
     ),
     UpsSnmpSensorDescription(
+        key="test_status",
+        name="Test Status",
+        data_key="test_status",
+        state_class=None,
+    ),
+    UpsSnmpSensorDescription(
+        key="apc_calibration_status",
+        name="APC Calibration Status",
+        data_key="apc_calibration_status",
+        state_class=None,
+    ),
+    UpsSnmpSensorDescription(
         key="runtime_remaining",
         name="Runtime Remaining",
         native_unit_of_measurement="min",

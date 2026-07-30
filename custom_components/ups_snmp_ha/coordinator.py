@@ -31,7 +31,7 @@ from .const import (
     SNMP_BINARY_SENSOR_DESCRIPTIONS,
     SNMP_SENSOR_DESCRIPTIONS,
 )
-from .output_source import derive_output_states
+from .output_source import derive_output_states, derive_test_status
 from .sensor_availability_unified import (
     is_core_local_metric,
     resolve_canonical_metric,
@@ -61,6 +61,7 @@ APC_PARALLEL_ENTITY_TO_MIB_KEY = {
     "apc_ac_power": "output_source_raw",
     "apc_on_battery": "output_source_raw",
     "apc_on_bypass": "output_source_raw",
+    "apc_calibration_status": "calibration_status",
 }
 
 APC_PARALLEL_MIB_KEYS = frozenset(APC_PARALLEL_ENTITY_TO_MIB_KEY.values())
@@ -499,6 +500,10 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             except (TypeError, ValueError):
                 derived["battery_status_text"] = "unknown"
 
+        test_status = data.get("test_status")
+        if test_status is not None:
+            derived["test_status"] = derive_test_status(UPS_MIB, test_status)
+
         apc_battery_status = data.get("apc_battery_status")
         if apc_battery_status is not None:
             try:
@@ -520,6 +525,12 @@ class UpsSnmpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             derived["apc_ac_power"] = apc_states["ac_power"]
             derived["apc_on_battery"] = apc_states["on_battery"]
             derived["apc_on_bypass"] = apc_states["on_bypass"]
+
+        apc_calibration_status = data.get("apc_calibration_status")
+        if apc_calibration_status is not None:
+            derived["apc_calibration_status"] = derive_test_status(
+                APC_MIB, apc_calibration_status
+            )
 
         return derived
 

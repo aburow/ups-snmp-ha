@@ -90,6 +90,13 @@ class OutputSourceTests(unittest.TestCase):
                 result = self.module.derive_output_states("apc_mib", value)
                 self.assertNotEqual(result["output_source"], "unknown")
 
+    def test_test_status_maps_for_rfc_and_apc(self) -> None:
+        """Keep the active test and calibration states distinguishable."""
+        self.assertEqual(self.module.derive_test_status("ups_mib", 5), "in_progress")
+        self.assertEqual(
+            self.module.derive_test_status("apc_mib", 3), "calibration_in_progress"
+        )
+
     def test_apc_bypass_variants(self) -> None:
         """Recognize every APC bypass variant as bypass operation."""
         for value in (6, 9, 10, 16, 17):

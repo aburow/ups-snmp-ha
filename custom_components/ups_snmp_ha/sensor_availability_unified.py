@@ -22,6 +22,7 @@ CANONICAL_CORE_METRICS: frozenset[str] = frozenset(
         "ac_power",
         "on_battery",
         "on_bypass",
+        "test_status",
     }
 )
 
@@ -34,6 +35,7 @@ LOCAL_TO_CANONICAL_METRIC: dict[str, str] = {
     "apc_battery_status": "battery_status",
     "apc_battery_status_text": "battery_status",
     "apc_battery_temperature": "battery_temperature",
+    "apc_calibration_status": "apc_calibration_status",
     "apc_input_frequency": "input_frequency",
     "apc_input_voltage": "input_voltage",
     "apc_on_battery": "on_battery",
@@ -69,6 +71,7 @@ LOCAL_TO_CANONICAL_METRIC: dict[str, str] = {
     "runtime_remaining": "runtime_remaining",
     "seconds_on_battery": "seconds_on_battery",
     "serial_number": "serial_number",
+    "test_status": "test_status",
 }
 
 

@@ -46,6 +46,20 @@ ALL_SENSORS_UNIFIED = {
                 "category": "core",
             },
             {
+                "key": "test_status",
+                "label": "Test Status",
+                "source": "derived",
+                "oid": "1.3.6.1.2.1.33.1.7.3.0",
+                "category": "core",
+            },
+            {
+                "key": "apc_calibration_status",
+                "label": "APC Calibration Status",
+                "source": "derived",
+                "oid": "1.3.6.1.4.1.318.1.1.1.7.2.6.0",
+                "category": "core",
+            },
+            {
                 "key": "runtime_remaining",
                 "label": "Runtime Remaining",
                 "source": "snmp",
@@ -315,6 +329,13 @@ ALL_SENSORS_UNIFIED = {
                 "label": "Output Source",
                 "source": "derived",
                 "oid": "1.3.6.1.4.1.318.1.1.1.4.1.1.0",
+                "category": "core",
+            },
+            {
+                "key": "apc_calibration_status",
+                "label": "APC Calibration Status",
+                "source": "derived",
+                "oid": "1.3.6.1.4.1.318.1.1.1.7.2.6.0",
                 "category": "core",
             },
             {

@@ -54,6 +54,24 @@ APC_AC_OFF_VALUES = {3, 5, 7, 8, 11, 15, 24, 26}
 APC_BATTERY_VALUES = {3, 15, 24, 27}
 APC_BYPASS_VALUES = {6, 9, 10, 16, 17}
 
+UPS_TEST_STATUS_MAP = {
+    1: "done_pass",
+    2: "done_warning",
+    3: "done_error",
+    4: "aborted",
+    5: "in_progress",
+    6: "no_tests_initiated",
+}
+
+APC_CALIBRATION_STATUS_MAP = {
+    1: "ok",
+    2: "invalid_calibration",
+    3: "calibration_in_progress",
+    4: "refused",
+    5: "aborted",
+    6: "pending",
+}
+
 
 def derive_output_states(protocol: str, raw_value: Any) -> dict[str, Any]:
     """Derive output-source and binary states from an SNMP enum value."""
@@ -96,3 +114,15 @@ def derive_output_states(protocol: str, raw_value: Any) -> dict[str, Any]:
         "ac_power": ac_power,
         "on_bypass": value in bypass_values if is_known else None,
     }
+
+
+def derive_test_status(protocol: str, raw_value: Any) -> str:
+    """Return a readable RFC 1628 test or APC calibration status."""
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError):
+        return "unknown"
+    status_map = (
+        APC_CALIBRATION_STATUS_MAP if protocol == "apc_mib" else UPS_TEST_STATUS_MAP
+    )
+    return status_map.get(value, "unknown")

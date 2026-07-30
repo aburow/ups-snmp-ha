@@ -42,6 +42,7 @@ UPS_MIB_OIDS: dict[str, dict[str, Any]] = {
     "input_current": {"oid": "1.3.6.1.2.1.33.1.3.3.1.4.1", "scale": 0.1},
     "input_power": {"oid": "1.3.6.1.2.1.33.1.3.3.1.5.1"},
     "output_source_raw": {"oid": "1.3.6.1.2.1.33.1.4.1.0", "poll_group": "fast"},
+    "test_status": {"oid": "1.3.6.1.2.1.33.1.7.3.0", "poll_group": "fast"},
     "output_frequency": {"oid": "1.3.6.1.2.1.33.1.4.2.0", "scale": 0.1},
     "output_line_count": {"oid": "1.3.6.1.2.1.33.1.4.3.0"},
     "output_load": {
@@ -72,6 +73,10 @@ APC_MIB_OIDS: dict[str, dict[str, Any]] = {
     "output_load": {"oid": "1.3.6.1.4.1.318.1.1.1.4.2.3.0", "poll_group": "fast"},
     "input_voltage": {"oid": "1.3.6.1.4.1.318.1.1.1.3.2.1.0", "poll_group": "fast"},
     "input_frequency": {"oid": "1.3.6.1.4.1.318.1.1.1.3.2.4.0"},
+    "calibration_status": {
+        "oid": "1.3.6.1.4.1.318.1.1.1.7.2.6.0",
+        "poll_group": "fast",
+    },
 }
 
 UPS_MIB_PROFILE: dict[str, Any] = {
@@ -88,6 +93,7 @@ UPS_MIB_PROFILE: dict[str, Any] = {
                 "seconds_on_battery",
                 "battery_charge",
                 "input_voltage",
+                "test_status",
             ],
             "poll_group": "fast",
         }
@@ -108,6 +114,7 @@ APC_MIB_PROFILE: dict[str, Any] = {
                 "output_load",
                 "battery_charge",
                 "input_voltage",
+                "calibration_status",
             ],
             "poll_group": "fast",
         }

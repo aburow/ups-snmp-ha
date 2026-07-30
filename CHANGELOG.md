@@ -2,6 +2,13 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.2.2-dev1] - 2026-07-31
+
+### Added
+
+- Added `Test Status` for RFC 1628 UPS-MIB devices. It distinguishes an active UPS diagnostic test from an ordinary battery event.
+- Added `APC Calibration Status` for devices with the APC PowerNet MIB. It reports pending, active, successful, refused, aborted, and invalid runtime calibrations.
+
 ## [1.2.1] - 2026-07-13
 
 ### Added
