@@ -11,7 +11,11 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntityDescription,
 )
-from homeassistant.components.sensor import SensorEntityDescription, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntityDescription,
+    SensorStateClass,
+)
 from .icons_unified import resolve_binary_sensor_icon, resolve_sensor_icon
 
 DOMAIN = "ups_snmp_ha"
@@ -77,6 +81,7 @@ SNMP_SENSOR_DESCRIPTIONS = [
         key="runtime_remaining",
         name="Runtime Remaining",
         native_unit_of_measurement="min",
+        device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         data_key="runtime_remaining",
     ),
@@ -177,6 +182,7 @@ SNMP_SENSOR_DESCRIPTIONS = [
         key="apc_runtime_remaining",
         name="APC Runtime Remaining",
         native_unit_of_measurement="min",
+        device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         data_key="apc_runtime_remaining",
     ),

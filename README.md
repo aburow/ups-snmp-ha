@@ -44,6 +44,8 @@ Current stable release: **1.2.1**
 5. Install "UPS SNMP"
 6. Restart Home Assistant
 
+To install a prerelease, enable **Show beta versions** for this repository in HACS before selecting the release.
+
 ### Manual Installation
 
 1. Copy `custom_components/ups_snmp_ha/` to `config/custom_components/` on your Home Assistant instance

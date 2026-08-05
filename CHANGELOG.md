@@ -2,6 +2,12 @@
 
 All notable changes to the UPS SNMP integration will be documented in this file.
 
+## [1.2.2-dev2] - 2026-08-05
+
+### Fixed
+
+- Marked `Runtime Remaining` and `APC Runtime Remaining` as duration sensors while retaining measurement statistics. Home Assistant can now display either sensor in a selected duration unit.
+
 ## [1.2.2-dev1] - 2026-07-31
 
 ### Added
