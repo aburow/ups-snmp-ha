@@ -61,6 +61,7 @@ APC_PARALLEL_ENTITY_TO_MIB_KEY = {
     "apc_ac_power": "output_source_raw",
     "apc_on_battery": "output_source_raw",
     "apc_on_bypass": "output_source_raw",
+    "apc_output_power": "output_power",
 }
 
 APC_PARALLEL_MIB_KEYS = frozenset(APC_PARALLEL_ENTITY_TO_MIB_KEY.values())

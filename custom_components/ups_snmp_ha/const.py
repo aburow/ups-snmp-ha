@@ -11,7 +11,8 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntityDescription,
 )
-from homeassistant.components.sensor import SensorEntityDescription, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription, SensorStateClass
+from homeassistant.const import UnitOfPower
 from .icons_unified import resolve_binary_sensor_icon, resolve_sensor_icon
 
 DOMAIN = "ups_snmp_ha"
@@ -222,6 +223,14 @@ SNMP_SENSOR_DESCRIPTIONS = [
         native_unit_of_measurement="%",
         state_class=SensorStateClass.MEASUREMENT,
         data_key="apc_output_load",
+    ),
+        UpsSnmpSensorDescription(
+        key="apc_output_power",
+        name="APC Output Power",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        data_key="apc_output_power",
     ),
 ]
 

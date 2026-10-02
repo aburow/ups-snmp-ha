@@ -72,6 +72,10 @@ APC_MIB_OIDS: dict[str, dict[str, Any]] = {
     "output_load": {"oid": "1.3.6.1.4.1.318.1.1.1.4.2.3.0", "poll_group": "fast"},
     "input_voltage": {"oid": "1.3.6.1.4.1.318.1.1.1.3.2.1.0", "poll_group": "fast"},
     "input_frequency": {"oid": "1.3.6.1.4.1.318.1.1.1.3.2.4.0"},
+    "output_power": {
+        "oid": "1.3.6.1.4.1.318.1.1.1.4.2.8.0",
+        "poll_group": "fast",
+    },
 }
 
 UPS_MIB_PROFILE: dict[str, Any] = {
